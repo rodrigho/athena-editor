@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace AthenaEditor.entities
 {
 
-    class Response
+    public class Response
     {
         public String QueryExecutionId { get; set; }
         public List<List<String>> Lists { get; set; }

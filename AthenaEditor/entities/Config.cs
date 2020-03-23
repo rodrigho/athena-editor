@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace AthenaEditor.entities
 {
-    class Config
+    public class Config
     {
         public String athenaDatabase { get; set; }
         public String athenaOutputBucket { get; set; }

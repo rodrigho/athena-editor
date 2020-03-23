@@ -28,31 +28,37 @@ namespace AthenaEditor.controllers
             return httpClientService;
         }
 
-        public static async Task Post(String body, String url, DataGridView dataGridViewResult, TabControl tabControl, HashSet<String> queryExecutionIds)
+        public static Response Post(String body, String url)
         {
+            Response response;
             using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
             {
-                HttpResponseMessage httpResponseMessage = await httpClient.PostAsync(url, content);
+                HttpResponseMessage httpResponseMessage = httpClient.PostAsync(url, content).Result;
                 Console.WriteLine(HttpStatusCode.Created);
 
                 string returnValue = httpResponseMessage.Content.ReadAsStringAsync().Result;
 
-                Response result = JsonConvert.DeserializeObject<Response>(returnValue);
-
-                TabPage tabPage = tabControl.TabPages[0];
-                tabPage.Text = String.Format("Result #{0} ({1}x{2})", 1, result.Lists[0].Count, result.Lists.Count - 1);                
-
-                List<String> headers = result.Lists[0];
-                dataGridViewResult.Columns.Clear();
-                foreach (String header in headers)
-                    dataGridViewResult.Columns.Add(header, header.Replace(" ", "_"));
-                for (int i = 0; i < result.Lists.Count - 1; i++)
-                    dataGridViewResult.Rows.Insert(i, result.Lists[i + 1].ToArray());
-
-                queryExecutionIds.Add(result.QueryExecutionId);
-                Console.WriteLine("QueryExecutionId: " + result.QueryExecutionId);
-                
+                response = JsonConvert.DeserializeObject<Response>(returnValue);
             }
+            return response;
+        }
+
+        public static async Task Post(String body, String url, DataGridView dataGridViewResult, TabControl tabControl, HashSet<String> queryExecutionIds)
+        {
+            Response response = Post(body, url);
+
+            TabPage tabPage = tabControl.TabPages[0];
+            tabPage.Text = String.Format("Result #{0} ({1}x{2})", 1, response.Lists[0].Count, response.Lists.Count - 1);
+
+            dataGridViewResult.Columns.Clear();
+            foreach (String header in response.Lists[0])
+                dataGridViewResult.Columns.Add(header, header.Replace(" ", "_"));
+            for (int i = 0; i < response.Lists.Count - 1; i++)
+                dataGridViewResult.Rows.Insert(i, response.Lists[i + 1].ToArray());
+
+            queryExecutionIds.Add(response.QueryExecutionId);
+            Console.WriteLine("QueryExecutionId: " + response.QueryExecutionId);
+
         }
 
         public static async Task Get(String url)

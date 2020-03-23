@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace AthenaEditor
 {
-    static class Program
+    public static class Program
     {
         /// <summary>
         /// The main entry point for the application.
@@ -16,7 +16,7 @@ namespace AthenaEditor
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new ConnectionManager());
         }
     }
 }

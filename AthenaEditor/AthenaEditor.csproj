@@ -75,6 +75,13 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ConnectionManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ConnectionManager.Designer.cs">
+      <DependentUpon>ConnectionManager.cs</DependentUpon>
+    </Compile>
+    <Compile Include="entities\Connection.cs" />
     <Compile Include="entities\Config.cs" />
     <Compile Include="entities\Response.cs" />
     <Compile Include="services\HttpClientService.cs" />
@@ -88,6 +95,10 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="services\MainService.cs" />
+    <Compile Include="util\TextConstants.cs" />
+    <EmbeddedResource Include="ConnectionManager.resx">
+      <DependentUpon>ConnectionManager.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -115,6 +126,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="icons\icons8-play-button-circled-32.png" />
+    <Content Include="icons\icons8-quick-mode-on-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-save-32.png" />
+    <Content Include="icons\icons8-upload-to-ftp-32.png" />
+    <Content Include="icons\koala.ico" />
     <Content Include="koala.ico" />
   </ItemGroup>
   <ItemGroup>
