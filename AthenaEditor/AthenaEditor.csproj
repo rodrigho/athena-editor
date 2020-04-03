@@ -81,9 +81,12 @@
     <Compile Include="ConnectionManager.Designer.cs">
       <DependentUpon>ConnectionManager.cs</DependentUpon>
     </Compile>
+    <Compile Include="entities\ColumnInfo.cs" />
     <Compile Include="entities\Connection.cs" />
     <Compile Include="entities\Config.cs" />
     <Compile Include="entities\Response.cs" />
+    <Compile Include="entities\SchemaInfo.cs" />
+    <Compile Include="entities\TableInfo.cs" />
     <Compile Include="services\HttpClientService.cs" />
     <Compile Include="controllers\MainController.cs" />
     <Compile Include="MainForm.cs">
@@ -126,12 +129,30 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="icons\icons8-play-button-circled-32.png" />
+    <Content Include="icons\empty.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-bookmark-48.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-data-grid-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-database-16.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-play-button-circled-32.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="icons\icons8-quick-mode-on-16.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="icons\icons8-save-32.png" />
-    <Content Include="icons\icons8-upload-to-ftp-32.png" />
+    <Content Include="icons\icons8-save-32.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="icons\icons8-upload-to-ftp-32.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="icons\koala.ico" />
     <Content Include="koala.ico" />
   </ItemGroup>
@@ -145,6 +166,12 @@
     <Analyzer Include="..\packages\Microsoft.NetCore.Analyzers.2.9.8\analyzers\dotnet\cs\Microsoft.NetCore.CSharp.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers.2.9.8\analyzers\dotnet\cs\Microsoft.NetFramework.Analyzers.dll" />
     <Analyzer Include="..\packages\Microsoft.NetFramework.Analyzers.2.9.8\analyzers\dotnet\cs\Microsoft.NetFramework.CSharp.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\FastColoredTextBox\FastColoredTextBox\FastColoredTextBox.csproj">
+      <Project>{6dd14a85-ccfc-4774-bd26-0f5772512319}</Project>
+      <Name>FastColoredTextBox</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

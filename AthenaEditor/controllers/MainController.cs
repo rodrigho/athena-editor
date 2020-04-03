@@ -18,14 +18,17 @@ namespace AthenaEditor.controllers
         public ConnectionManager ConnectionManager { get; set; }
 
         private static MainController mainController;
-        public HashSet<string> QueryExecutionIds { get; set; }
+        public HashSet<string> QueryExecutionIds { get; }
+        public Dictionary<string, SchemaInfo> SchemasInfo { get; }
         public Config CurrentConfig { get; set; }
         public Connection CurrentConnection { get; set; }
 
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public string[] Sqlwords = { "select ", " select "," from "," where "," group "," order "," limit "," by "," and ",
-            " having ", " desc ", " asc ", " not ", " having ", " like ", " describe "};
+        public HashSet<string> Sqlwords = new HashSet<string>{ "select","from","where","group","order","limit","by","and","inner","join","left","right",
+            "having", "as", "desc", "asc", "not", "having", "like", "describe", "show", "schemas", "tables"};
+
+        private const String Uri =  "http://127.0.0.1:8081/athena-api/";
 
         public List<Connection> Connections { get; set; }
 
@@ -33,6 +36,7 @@ namespace AthenaEditor.controllers
         private MainController()
         {            
             QueryExecutionIds = new HashSet<string>();
+            SchemasInfo = new Dictionary<string, SchemaInfo>();
         }
 
         public static MainController GetInstance()
@@ -56,17 +60,7 @@ namespace AthenaEditor.controllers
                 CurrentConnection.Region);
             MainForm.Show();
             MainForm.FillSchemas();
-        }
-
-        public void ExecuteCurrent(String query, bool useQueryId, String queryExecutionId, DataGridView dataGridViewResult, TabControl tabControl)
-        {
-            CurrentConfig.queries.Clear();
-            CurrentConfig.queries.Add(query);
-            CurrentConfig.useQueryId = useQueryId;
-            CurrentConfig.queryExecutionId = queryExecutionId;
-            HttpClientService.Post(JsonConvert.SerializeObject(CurrentConfig), "http://127.0.0.1:8081/athena-api/execute", 
-                dataGridViewResult, tabControl, QueryExecutionIds);
-        }
+        }        
 
         public Response GetQueryResult(String query, bool useQueryId, String queryExecutionId)
         {
@@ -74,13 +68,12 @@ namespace AthenaEditor.controllers
             CurrentConfig.queries.Add(query);
             CurrentConfig.useQueryId = useQueryId;
             CurrentConfig.queryExecutionId = queryExecutionId;
-            return HttpClientService.Post(JsonConvert.SerializeObject(CurrentConfig), "http://127.0.0.1:8081/athena-api/execute");
+            return HttpClientService.Post(JsonConvert.SerializeObject(CurrentConfig), String.Format("{0}execute", Uri));
         }
 
         public async void Salute()
         {
-            Uri uri = new Uri("http://127.0.0.1:8081/athena-api/");
-            var responseString = await httpClient.GetStringAsync(uri).ConfigureAwait(false);
+            var responseString = await httpClient.GetStringAsync(Uri).ConfigureAwait(false);
             Console.WriteLine(responseString);
         }
 

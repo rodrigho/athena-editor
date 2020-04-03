@@ -28,11 +28,12 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle1 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle2 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle3 = new System.Windows.Forms.DataGridViewCellStyle();
-            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle4 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle5 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle6 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle7 = new System.Windows.Forms.DataGridViewCellStyle();
+            System.Windows.Forms.DataGridViewCellStyle dataGridViewCellStyle8 = new System.Windows.Forms.DataGridViewCellStyle();
             this.menuMain = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.addConectionToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -46,11 +47,19 @@
             this.buttonSave = new System.Windows.Forms.Button();
             this.buttonLoad = new System.Windows.Forms.Button();
             this.splitContainerMain = new System.Windows.Forms.SplitContainer();
+            this.panelSchema = new System.Windows.Forms.Panel();
+            this.splitContainerSchema = new System.Windows.Forms.SplitContainer();
+            this.treeViewSchemas = new System.Windows.Forms.TreeView();
+            this.listBoxNames = new System.Windows.Forms.ListBox();
+            this.labelName = new System.Windows.Forms.Label();
+            this.labelType = new System.Windows.Forms.Label();
+            this.labelConnection = new System.Windows.Forms.Label();
+            this.labelSchemas = new System.Windows.Forms.Label();
             this.splitContainerWorkspace = new System.Windows.Forms.SplitContainer();
             this.splitContainerQuery = new System.Windows.Forms.SplitContainer();
             this.tabControlQuery = new System.Windows.Forms.TabControl();
             this.tabQuey = new System.Windows.Forms.TabPage();
-            this.richTextBoxQuery = new System.Windows.Forms.RichTextBox();
+            this.fastRichTextBoxQuery = new FastColoredTextBoxNS.FastColoredTextBox();
             this.tabQueryAdd = new System.Windows.Forms.TabPage();
             this.richTextBoxQueryIds = new System.Windows.Forms.RichTextBox();
             this.tabControlResult = new System.Windows.Forms.TabControl();
@@ -59,15 +68,24 @@
             this.statusStrip = new System.Windows.Forms.StatusStrip();
             this.toolStripProgressBar = new System.Windows.Forms.ToolStripProgressBar();
             this.toolStripStatusProgress = new System.Windows.Forms.ToolStripStatusLabel();
+            this.toolStripStatusLabelLnCol = new System.Windows.Forms.ToolStripStatusLabel();
             this.splitContainerLog = new System.Windows.Forms.SplitContainer();
-            this.richTextBoxLog = new System.Windows.Forms.RichTextBox();
-            this.treeViewSchemas = new System.Windows.Forms.TreeView();
+            this.fastRichTextBoxLog = new FastColoredTextBoxNS.FastColoredTextBox();
+            this.backgroundWorkerQueries = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorkerQueryId = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorkerBar = new System.ComponentModel.BackgroundWorker();
+            this.backgroundWorkerSchemaInfo = new System.ComponentModel.BackgroundWorker();
             this.menuMain.SuspendLayout();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).BeginInit();
             this.splitContainerMain.Panel1.SuspendLayout();
             this.splitContainerMain.Panel2.SuspendLayout();
             this.splitContainerMain.SuspendLayout();
+            this.panelSchema.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerSchema)).BeginInit();
+            this.splitContainerSchema.Panel1.SuspendLayout();
+            this.splitContainerSchema.Panel2.SuspendLayout();
+            this.splitContainerSchema.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerWorkspace)).BeginInit();
             this.splitContainerWorkspace.Panel1.SuspendLayout();
             this.splitContainerWorkspace.Panel2.SuspendLayout();
@@ -78,6 +96,7 @@
             this.splitContainerQuery.SuspendLayout();
             this.tabControlQuery.SuspendLayout();
             this.tabQuey.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.fastRichTextBoxQuery)).BeginInit();
             this.tabControlResult.SuspendLayout();
             this.tabResult.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewResult)).BeginInit();
@@ -86,6 +105,7 @@
             this.splitContainerLog.Panel1.SuspendLayout();
             this.splitContainerLog.Panel2.SuspendLayout();
             this.splitContainerLog.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.fastRichTextBoxLog)).BeginInit();
             this.SuspendLayout();
             // 
             // menuMain
@@ -222,8 +242,10 @@
             // splitContainerMain.Panel1
             // 
             this.splitContainerMain.Panel1.AccessibleName = "PanelFiles";
-            this.splitContainerMain.Panel1.BackColor = System.Drawing.SystemColors.ControlLight;
-            this.splitContainerMain.Panel1.Controls.Add(this.treeViewSchemas);
+            this.splitContainerMain.Panel1.BackColor = System.Drawing.SystemColors.Control;
+            this.splitContainerMain.Panel1.Controls.Add(this.panelSchema);
+            this.splitContainerMain.Panel1.Controls.Add(this.labelConnection);
+            this.splitContainerMain.Panel1.Controls.Add(this.labelSchemas);
             // 
             // splitContainerMain.Panel2
             // 
@@ -233,6 +255,111 @@
             this.splitContainerMain.Size = new System.Drawing.Size(1028, 383);
             this.splitContainerMain.SplitterDistance = 241;
             this.splitContainerMain.TabIndex = 2;
+            // 
+            // panelSchema
+            // 
+            this.panelSchema.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.panelSchema.Controls.Add(this.splitContainerSchema);
+            this.panelSchema.Location = new System.Drawing.Point(0, 28);
+            this.panelSchema.Name = "panelSchema";
+            this.panelSchema.Size = new System.Drawing.Size(243, 352);
+            this.panelSchema.TabIndex = 3;
+            // 
+            // splitContainerSchema
+            // 
+            this.splitContainerSchema.BackColor = System.Drawing.SystemColors.ControlDark;
+            this.splitContainerSchema.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.splitContainerSchema.Location = new System.Drawing.Point(0, 0);
+            this.splitContainerSchema.Name = "splitContainerSchema";
+            this.splitContainerSchema.Orientation = System.Windows.Forms.Orientation.Horizontal;
+            // 
+            // splitContainerSchema.Panel1
+            // 
+            this.splitContainerSchema.Panel1.Controls.Add(this.treeViewSchemas);
+            // 
+            // splitContainerSchema.Panel2
+            // 
+            this.splitContainerSchema.Panel2.BackColor = System.Drawing.SystemColors.ControlLightLight;
+            this.splitContainerSchema.Panel2.Controls.Add(this.listBoxNames);
+            this.splitContainerSchema.Panel2.Controls.Add(this.labelName);
+            this.splitContainerSchema.Panel2.Controls.Add(this.labelType);
+            this.splitContainerSchema.Size = new System.Drawing.Size(243, 352);
+            this.splitContainerSchema.SplitterDistance = 262;
+            this.splitContainerSchema.TabIndex = 0;
+            // 
+            // treeViewSchemas
+            // 
+            this.treeViewSchemas.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.treeViewSchemas.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.treeViewSchemas.Indent = 16;
+            this.treeViewSchemas.Location = new System.Drawing.Point(0, 0);
+            this.treeViewSchemas.Margin = new System.Windows.Forms.Padding(6, 3, 3, 3);
+            this.treeViewSchemas.Name = "treeViewSchemas";
+            this.treeViewSchemas.ShowRootLines = false;
+            this.treeViewSchemas.Size = new System.Drawing.Size(243, 262);
+            this.treeViewSchemas.TabIndex = 0;
+            this.treeViewSchemas.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeViewSchemas_AfterSelect);
+            this.treeViewSchemas.DoubleClick += new System.EventHandler(this.treeViewSchemas_DoubleClick);
+            // 
+            // listBoxNames
+            // 
+            this.listBoxNames.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.listBoxNames.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.listBoxNames.FormattingEnabled = true;
+            this.listBoxNames.HorizontalScrollbar = true;
+            this.listBoxNames.Location = new System.Drawing.Point(8, 25);
+            this.listBoxNames.MultiColumn = true;
+            this.listBoxNames.Name = "listBoxNames";
+            this.listBoxNames.Size = new System.Drawing.Size(221, 52);
+            this.listBoxNames.TabIndex = 6;
+            // 
+            // labelName
+            // 
+            this.labelName.AutoSize = true;
+            this.labelName.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelName.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(255)))), ((int)(((byte)(128)))), ((int)(((byte)(0)))));
+            this.labelName.Location = new System.Drawing.Point(58, 6);
+            this.labelName.Name = "labelName";
+            this.labelName.Size = new System.Drawing.Size(85, 15);
+            this.labelName.TabIndex = 4;
+            this.labelName.Text = "schema_name";
+            // 
+            // labelType
+            // 
+            this.labelType.AutoSize = true;
+            this.labelType.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelType.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.labelType.Location = new System.Drawing.Point(4, 6);
+            this.labelType.Name = "labelType";
+            this.labelType.Size = new System.Drawing.Size(58, 14);
+            this.labelType.TabIndex = 3;
+            this.labelType.Text = "Schema:";
+            // 
+            // labelConnection
+            // 
+            this.labelConnection.AutoSize = true;
+            this.labelConnection.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelConnection.ForeColor = System.Drawing.Color.Chocolate;
+            this.labelConnection.Location = new System.Drawing.Point(69, 6);
+            this.labelConnection.Name = "labelConnection";
+            this.labelConnection.Size = new System.Drawing.Size(69, 15);
+            this.labelConnection.TabIndex = 2;
+            this.labelConnection.Text = "connection";
+            // 
+            // labelSchemas
+            // 
+            this.labelSchemas.AutoSize = true;
+            this.labelSchemas.Font = new System.Drawing.Font("Tahoma", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelSchemas.ForeColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.labelSchemas.Location = new System.Drawing.Point(4, 7);
+            this.labelSchemas.Name = "labelSchemas";
+            this.labelSchemas.Size = new System.Drawing.Size(60, 14);
+            this.labelSchemas.TabIndex = 1;
+            this.labelSchemas.Text = "Schemas";
             // 
             // splitContainerWorkspace
             // 
@@ -289,7 +416,7 @@
             // 
             // tabQuey
             // 
-            this.tabQuey.Controls.Add(this.richTextBoxQuery);
+            this.tabQuey.Controls.Add(this.fastRichTextBoxQuery);
             this.tabQuey.Location = new System.Drawing.Point(4, 22);
             this.tabQuey.Name = "tabQuey";
             this.tabQuey.Padding = new System.Windows.Forms.Padding(3);
@@ -298,19 +425,55 @@
             this.tabQuey.Text = "query";
             this.tabQuey.UseVisualStyleBackColor = true;
             // 
-            // richTextBoxQuery
+            // fastRichTextBoxQuery
             // 
-            this.richTextBoxQuery.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBoxQuery.Font = new System.Drawing.Font("Consolas", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxQuery.ForeColor = System.Drawing.SystemColors.InfoText;
-            this.richTextBoxQuery.Location = new System.Drawing.Point(3, 3);
-            this.richTextBoxQuery.Name = "richTextBoxQuery";
-            this.richTextBoxQuery.Size = new System.Drawing.Size(578, 170);
-            this.richTextBoxQuery.TabIndex = 0;
-            this.richTextBoxQuery.Text = "";
-            this.richTextBoxQuery.WordWrap = false;
-            this.richTextBoxQuery.TextChanged += new System.EventHandler(this.richTextBoxQuery_TextChanged);
-            this.richTextBoxQuery.KeyDown += new System.Windows.Forms.KeyEventHandler(this.richTextBoxQuery_KeyDown);
+            this.fastRichTextBoxQuery.AutoCompleteBracketsList = new char[] {
+        '(',
+        ')',
+        '{',
+        '}',
+        '[',
+        ']',
+        '\"',
+        '\"',
+        '\'',
+        '\''};
+            this.fastRichTextBoxQuery.AutoIndentCharsPatterns = "";
+            this.fastRichTextBoxQuery.AutoIndentExistingLines = false;
+            this.fastRichTextBoxQuery.AutoScrollMinSize = new System.Drawing.Size(32, 15);
+            this.fastRichTextBoxQuery.BackBrush = null;
+            this.fastRichTextBoxQuery.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.fastRichTextBoxQuery.CharHeight = 15;
+            this.fastRichTextBoxQuery.CharWidth = 7;
+            this.fastRichTextBoxQuery.CommentPrefix = "--";
+            this.fastRichTextBoxQuery.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.fastRichTextBoxQuery.DelayedEventsInterval = 200;
+            this.fastRichTextBoxQuery.DelayedTextChangedInterval = 500;
+            this.fastRichTextBoxQuery.DisabledColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))));
+            this.fastRichTextBoxQuery.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.fastRichTextBoxQuery.Font = new System.Drawing.Font("Consolas", 9.75F);
+            this.fastRichTextBoxQuery.ImeMode = System.Windows.Forms.ImeMode.Off;
+            this.fastRichTextBoxQuery.IsReplaceMode = false;
+            this.fastRichTextBoxQuery.Language = FastColoredTextBoxNS.Language.SQL;
+            this.fastRichTextBoxQuery.LeftBracket = '(';
+            this.fastRichTextBoxQuery.Location = new System.Drawing.Point(3, 3);
+            this.fastRichTextBoxQuery.Name = "fastRichTextBoxQuery";
+            this.fastRichTextBoxQuery.Paddings = new System.Windows.Forms.Padding(0);
+            this.fastRichTextBoxQuery.PreferredLineWidth = 80;
+            this.fastRichTextBoxQuery.ReservedCountOfLineNumberChars = 2;
+            this.fastRichTextBoxQuery.RightBracket = ')';
+            this.fastRichTextBoxQuery.SelectionColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(255)))));
+            this.fastRichTextBoxQuery.ServiceColors = ((FastColoredTextBoxNS.ServiceColors)(resources.GetObject("fastRichTextBoxQuery.ServiceColors")));
+            this.fastRichTextBoxQuery.ServiceLinesColor = System.Drawing.Color.White;
+            this.fastRichTextBoxQuery.Size = new System.Drawing.Size(578, 170);
+            this.fastRichTextBoxQuery.TabIndex = 4;
+            this.fastRichTextBoxQuery.Zoom = 100;
+            this.fastRichTextBoxQuery.TextChanged += new System.EventHandler<FastColoredTextBoxNS.TextChangedEventArgs>(this.fastRichTextBoxQuery_TextChanged);
+            this.fastRichTextBoxQuery.SelectionChanged += new System.EventHandler(this.fastRichTextBoxQuery_SelectionChanged);
+            this.fastRichTextBoxQuery.SelectionChangedDelayed += new System.EventHandler(this.fastRichTextBoxQuery_SelectionChangedDelayed);
+            this.fastRichTextBoxQuery.AutoIndentNeeded += new System.EventHandler<FastColoredTextBoxNS.AutoIndentEventArgs>(this.fastRichTextBoxQuery_AutoIndentNeeded);
+            this.fastRichTextBoxQuery.CustomAction += new System.EventHandler<FastColoredTextBoxNS.CustomActionEventArgs>(this.fastRichTextBoxQuery_CustomAction);
+            this.fastRichTextBoxQuery.KeyDown += new System.Windows.Forms.KeyEventHandler(this.fastRichTextBoxQuery_KeyDown);
             // 
             // tabQueryAdd
             // 
@@ -358,42 +521,42 @@
             // 
             // dataGridViewResult
             // 
-            dataGridViewCellStyle1.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle1.BackColor = System.Drawing.Color.LemonChiffon;
-            dataGridViewCellStyle1.ForeColor = System.Drawing.Color.Black;
-            dataGridViewCellStyle1.SelectionBackColor = System.Drawing.Color.DarkOrange;
-            dataGridViewCellStyle1.SelectionForeColor = System.Drawing.Color.White;
-            dataGridViewCellStyle1.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewResult.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle1;
-            dataGridViewCellStyle2.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle2.BackColor = System.Drawing.SystemColors.Control;
-            dataGridViewCellStyle2.Font = new System.Drawing.Font("Verdana", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle2.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle2.SelectionBackColor = System.Drawing.Color.Chocolate;
-            dataGridViewCellStyle2.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle2.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewResult.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle2;
+            dataGridViewCellStyle5.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle5.BackColor = System.Drawing.Color.LemonChiffon;
+            dataGridViewCellStyle5.ForeColor = System.Drawing.Color.Black;
+            dataGridViewCellStyle5.SelectionBackColor = System.Drawing.Color.DarkOrange;
+            dataGridViewCellStyle5.SelectionForeColor = System.Drawing.Color.White;
+            dataGridViewCellStyle5.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewResult.AlternatingRowsDefaultCellStyle = dataGridViewCellStyle5;
+            dataGridViewCellStyle6.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle6.BackColor = System.Drawing.SystemColors.Control;
+            dataGridViewCellStyle6.Font = new System.Drawing.Font("Verdana", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle6.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle6.SelectionBackColor = System.Drawing.Color.Chocolate;
+            dataGridViewCellStyle6.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle6.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewResult.ColumnHeadersDefaultCellStyle = dataGridViewCellStyle6;
             this.dataGridViewResult.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle3.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle3.BackColor = System.Drawing.SystemColors.Window;
-            dataGridViewCellStyle3.Font = new System.Drawing.Font("Tahoma", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle3.ForeColor = System.Drawing.SystemColors.ControlText;
-            dataGridViewCellStyle3.SelectionBackColor = System.Drawing.Color.DarkOrange;
-            dataGridViewCellStyle3.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle3.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
-            this.dataGridViewResult.DefaultCellStyle = dataGridViewCellStyle3;
+            dataGridViewCellStyle7.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle7.BackColor = System.Drawing.SystemColors.Window;
+            dataGridViewCellStyle7.Font = new System.Drawing.Font("Tahoma", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle7.ForeColor = System.Drawing.SystemColors.ControlText;
+            dataGridViewCellStyle7.SelectionBackColor = System.Drawing.Color.DarkOrange;
+            dataGridViewCellStyle7.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle7.WrapMode = System.Windows.Forms.DataGridViewTriState.False;
+            this.dataGridViewResult.DefaultCellStyle = dataGridViewCellStyle7;
             this.dataGridViewResult.Dock = System.Windows.Forms.DockStyle.Fill;
             this.dataGridViewResult.GridColor = System.Drawing.SystemColors.Control;
             this.dataGridViewResult.Location = new System.Drawing.Point(3, 3);
             this.dataGridViewResult.Name = "dataGridViewResult";
-            dataGridViewCellStyle4.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
-            dataGridViewCellStyle4.BackColor = System.Drawing.SystemColors.ButtonFace;
-            dataGridViewCellStyle4.Font = new System.Drawing.Font("Arial Unicode MS", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            dataGridViewCellStyle4.ForeColor = System.Drawing.SystemColors.WindowText;
-            dataGridViewCellStyle4.SelectionBackColor = System.Drawing.Color.Chocolate;
-            dataGridViewCellStyle4.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
-            dataGridViewCellStyle4.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
-            this.dataGridViewResult.RowHeadersDefaultCellStyle = dataGridViewCellStyle4;
+            dataGridViewCellStyle8.Alignment = System.Windows.Forms.DataGridViewContentAlignment.MiddleLeft;
+            dataGridViewCellStyle8.BackColor = System.Drawing.SystemColors.ButtonFace;
+            dataGridViewCellStyle8.Font = new System.Drawing.Font("Arial Unicode MS", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            dataGridViewCellStyle8.ForeColor = System.Drawing.SystemColors.WindowText;
+            dataGridViewCellStyle8.SelectionBackColor = System.Drawing.Color.Chocolate;
+            dataGridViewCellStyle8.SelectionForeColor = System.Drawing.SystemColors.HighlightText;
+            dataGridViewCellStyle8.WrapMode = System.Windows.Forms.DataGridViewTriState.True;
+            this.dataGridViewResult.RowHeadersDefaultCellStyle = dataGridViewCellStyle8;
             this.dataGridViewResult.Size = new System.Drawing.Size(769, 134);
             this.dataGridViewResult.TabIndex = 0;
             // 
@@ -401,7 +564,8 @@
             // 
             this.statusStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripProgressBar,
-            this.toolStripStatusProgress});
+            this.toolStripStatusProgress,
+            this.toolStripStatusLabelLnCol});
             this.statusStrip.Location = new System.Drawing.Point(0, 508);
             this.statusStrip.Name = "statusStrip";
             this.statusStrip.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
@@ -420,6 +584,12 @@
             this.toolStripStatusProgress.Size = new System.Drawing.Size(55, 17);
             this.toolStripStatusProgress.Text = ":Progress";
             // 
+            // toolStripStatusLabelLnCol
+            // 
+            this.toolStripStatusLabelLnCol.Name = "toolStripStatusLabelLnCol";
+            this.toolStripStatusLabelLnCol.Size = new System.Drawing.Size(71, 17);
+            this.toolStripStatusLabelLnCol.Text = "Ln: 1 Col: 10";
+            // 
             // splitContainerLog
             // 
             this.splitContainerLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -436,30 +606,80 @@
             // 
             // splitContainerLog.Panel2
             // 
-            this.splitContainerLog.Panel2.Controls.Add(this.richTextBoxLog);
+            this.splitContainerLog.Panel2.Controls.Add(this.fastRichTextBoxLog);
             this.splitContainerLog.Size = new System.Drawing.Size(1028, 454);
             this.splitContainerLog.SplitterDistance = 383;
             this.splitContainerLog.TabIndex = 4;
             // 
-            // richTextBoxLog
+            // fastRichTextBoxLog
             // 
-            this.richTextBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.richTextBoxLog.Font = new System.Drawing.Font("Lucida Console", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.richTextBoxLog.Location = new System.Drawing.Point(0, 0);
-            this.richTextBoxLog.Name = "richTextBoxLog";
-            this.richTextBoxLog.Size = new System.Drawing.Size(1028, 67);
-            this.richTextBoxLog.TabIndex = 0;
-            this.richTextBoxLog.Text = "";
+            this.fastRichTextBoxLog.AutoCompleteBracketsList = new char[] {
+        '(',
+        ')',
+        '{',
+        '}',
+        '[',
+        ']',
+        '\"',
+        '\"',
+        '\'',
+        '\''};
+            this.fastRichTextBoxLog.AutoIndentCharsPatterns = "";
+            this.fastRichTextBoxLog.AutoIndentExistingLines = false;
+            this.fastRichTextBoxLog.AutoScrollMinSize = new System.Drawing.Size(32, 15);
+            this.fastRichTextBoxLog.BackBrush = null;
+            this.fastRichTextBoxLog.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.fastRichTextBoxLog.CaretVisible = false;
+            this.fastRichTextBoxLog.CharHeight = 15;
+            this.fastRichTextBoxLog.CharWidth = 7;
+            this.fastRichTextBoxLog.CommentPrefix = "--";
+            this.fastRichTextBoxLog.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.fastRichTextBoxLog.DelayedEventsInterval = 200;
+            this.fastRichTextBoxLog.DelayedTextChangedInterval = 500;
+            this.fastRichTextBoxLog.DisabledColor = System.Drawing.Color.FromArgb(((int)(((byte)(100)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))), ((int)(((byte)(180)))));
+            this.fastRichTextBoxLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.fastRichTextBoxLog.Font = new System.Drawing.Font("Consolas", 9.75F);
+            this.fastRichTextBoxLog.ImeMode = System.Windows.Forms.ImeMode.Off;
+            this.fastRichTextBoxLog.IsReplaceMode = false;
+            this.fastRichTextBoxLog.Language = FastColoredTextBoxNS.Language.SQL;
+            this.fastRichTextBoxLog.LeftBracket = '(';
+            this.fastRichTextBoxLog.Location = new System.Drawing.Point(0, 0);
+            this.fastRichTextBoxLog.Name = "fastRichTextBoxLog";
+            this.fastRichTextBoxLog.Paddings = new System.Windows.Forms.Padding(0);
+            this.fastRichTextBoxLog.PreferredLineWidth = 80;
+            this.fastRichTextBoxLog.ReadOnly = true;
+            this.fastRichTextBoxLog.ReservedCountOfLineNumberChars = 2;
+            this.fastRichTextBoxLog.RightBracket = ')';
+            this.fastRichTextBoxLog.SelectionColor = System.Drawing.Color.FromArgb(((int)(((byte)(60)))), ((int)(((byte)(0)))), ((int)(((byte)(0)))), ((int)(((byte)(255)))));
+            this.fastRichTextBoxLog.ServiceColors = ((FastColoredTextBoxNS.ServiceColors)(resources.GetObject("fastRichTextBoxLog.ServiceColors")));
+            this.fastRichTextBoxLog.ServiceLinesColor = System.Drawing.Color.White;
+            this.fastRichTextBoxLog.Size = new System.Drawing.Size(1028, 67);
+            this.fastRichTextBoxLog.TabIndex = 5;
+            this.fastRichTextBoxLog.Zoom = 100;
+            this.fastRichTextBoxLog.TextChanged += new System.EventHandler<FastColoredTextBoxNS.TextChangedEventArgs>(this.fastRichTextBoxLog_TextChanged);
+            this.fastRichTextBoxLog.SelectionChangedDelayed += new System.EventHandler(this.fastRichTextBoxLog_SelectionChangedDelayed);
+            this.fastRichTextBoxLog.AutoIndentNeeded += new System.EventHandler<FastColoredTextBoxNS.AutoIndentEventArgs>(this.fastRichTextBoxLog_AutoIndentNeeded);
             // 
-            // treeViewSchemas
+            // backgroundWorkerQueries
             // 
-            this.treeViewSchemas.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.treeViewSchemas.Location = new System.Drawing.Point(4, 4);
-            this.treeViewSchemas.Name = "treeViewSchemas";
-            this.treeViewSchemas.Size = new System.Drawing.Size(234, 370);
-            this.treeViewSchemas.TabIndex = 0;
+            this.backgroundWorkerQueries.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerQueries_DoWork);
+            this.backgroundWorkerQueries.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerQueries_RunWorkerCompleted);
+            // 
+            // backgroundWorkerQueryId
+            // 
+            this.backgroundWorkerQueryId.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerQueryId_DoWork);
+            this.backgroundWorkerQueryId.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerQueryId_RunWorkerCompleted);
+            // 
+            // backgroundWorkerBar
+            // 
+            this.backgroundWorkerBar.WorkerReportsProgress = true;
+            this.backgroundWorkerBar.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerBar_DoWork);
+            this.backgroundWorkerBar.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorkerBar_ProgressChanged);
+            // 
+            // backgroundWorkerSchemaInfo
+            // 
+            this.backgroundWorkerSchemaInfo.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorkerSchemaInfo_DoWork);
+            this.backgroundWorkerSchemaInfo.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorkerSchemaInfo_RunWorkerCompleted);
             // 
             // MainForm
             // 
@@ -479,9 +699,16 @@
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
             this.splitContainerMain.Panel1.ResumeLayout(false);
+            this.splitContainerMain.Panel1.PerformLayout();
             this.splitContainerMain.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerMain)).EndInit();
             this.splitContainerMain.ResumeLayout(false);
+            this.panelSchema.ResumeLayout(false);
+            this.splitContainerSchema.Panel1.ResumeLayout(false);
+            this.splitContainerSchema.Panel2.ResumeLayout(false);
+            this.splitContainerSchema.Panel2.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.splitContainerSchema)).EndInit();
+            this.splitContainerSchema.ResumeLayout(false);
             this.splitContainerWorkspace.Panel1.ResumeLayout(false);
             this.splitContainerWorkspace.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerWorkspace)).EndInit();
@@ -492,6 +719,7 @@
             this.splitContainerQuery.ResumeLayout(false);
             this.tabControlQuery.ResumeLayout(false);
             this.tabQuey.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.fastRichTextBoxQuery)).EndInit();
             this.tabControlResult.ResumeLayout(false);
             this.tabResult.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.dataGridViewResult)).EndInit();
@@ -501,6 +729,7 @@
             this.splitContainerLog.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.splitContainerLog)).EndInit();
             this.splitContainerLog.ResumeLayout(false);
+            ((System.ComponentModel.ISupportInitialize)(this.fastRichTextBoxLog)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -518,7 +747,6 @@
         private System.Windows.Forms.ToolStripProgressBar toolStripProgressBar;
         private System.Windows.Forms.ToolStripStatusLabel toolStripStatusProgress;
         private System.Windows.Forms.SplitContainer splitContainerLog;
-        private System.Windows.Forms.RichTextBox richTextBoxLog;
         private System.Windows.Forms.SplitContainer splitContainerWorkspace;
         private System.Windows.Forms.SplitContainer splitContainerQuery;
         private System.Windows.Forms.TabControl tabControlQuery;
@@ -526,7 +754,6 @@
         private System.Windows.Forms.TabPage tabQueryAdd;
         private System.Windows.Forms.TabControl tabControlResult;
         private System.Windows.Forms.TabPage tabResult;
-        private System.Windows.Forms.RichTextBox richTextBoxQuery;
         private System.Windows.Forms.Button buttonLoad;
         private System.Windows.Forms.Button buttonExecuteSelected;
         private System.Windows.Forms.Button buttonSave;
@@ -537,6 +764,20 @@
         private System.Windows.Forms.Label labelQueryId;
         private System.Windows.Forms.RichTextBox richTextBoxQueryIds;
         private System.Windows.Forms.TreeView treeViewSchemas;
+        private System.Windows.Forms.Label labelSchemas;
+        private System.Windows.Forms.Label labelConnection;
+        private FastColoredTextBoxNS.FastColoredTextBox fastRichTextBoxQuery;
+        private FastColoredTextBoxNS.FastColoredTextBox fastRichTextBoxLog;
+        private System.Windows.Forms.ToolStripStatusLabel toolStripStatusLabelLnCol;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerQueries;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerQueryId;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerBar;
+        private System.ComponentModel.BackgroundWorker backgroundWorkerSchemaInfo;
+        private System.Windows.Forms.Panel panelSchema;
+        private System.Windows.Forms.SplitContainer splitContainerSchema;
+        private System.Windows.Forms.ListBox listBoxNames;
+        private System.Windows.Forms.Label labelName;
+        private System.Windows.Forms.Label labelType;
     }
 }
 

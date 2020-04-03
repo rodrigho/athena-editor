@@ -1,13 +1,16 @@
 ﻿using AthenaEditor.controllers;
 using AthenaEditor.entities;
+using FastColoredTextBoxNS;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -17,10 +20,20 @@ namespace AthenaEditor
 {
     public partial class MainForm : Form
     {
+        private string lang = "CSharp (custom highlighter)";
+        private string querySchemaInfo = "SELECT table_schema, table_name, column_name, ordinal_position, is_nullable, data_type, comment, extra_info FROM information_schema.columns;";
+        //styles
+        private TextStyle BlueStyle = new TextStyle(Brushes.Blue, null, FontStyle.Regular);
+        private TextStyle BoldStyle = new TextStyle(null, null, FontStyle.Bold | FontStyle.Underline);
+        private TextStyle GrayStyle = new TextStyle(Brushes.Gray, null, FontStyle.Regular);
+        private TextStyle MagentaStyle = new TextStyle(Brushes.Magenta, null, FontStyle.Regular);
+        private TextStyle GreenStyle = new TextStyle(Brushes.Green, null, FontStyle.Italic);
+        private TextStyle BrownStyle = new TextStyle(Brushes.Brown, null, FontStyle.Italic);
+        private TextStyle MaroonStyle = new TextStyle(Brushes.Maroon, null, FontStyle.Regular);
+        private MarkerStyle SameWordsStyle = new MarkerStyle(new SolidBrush(Color.FromArgb(40, Color.Gray)));
         public MainController MainController { get; set; }
 
-        private Font sqlFont;
-        private Font regularFont;
+        private Response currentResponse;
         public MainForm()
         {
             InitializeComponent();
@@ -31,11 +44,8 @@ namespace AthenaEditor
             formatButtonIcon(buttonExecuteSelected);
             formatButtonIcon(buttonSave);
             formatButtonIcon(buttonLoad);
-            formatButtonIcon(buttonQueryId);            
-
-            sqlFont = new Font("Consolas", 11, FontStyle.Bold);
-            regularFont = new Font("Consolas", 11, FontStyle.Regular);
-        }        
+            formatButtonIcon(buttonQueryId); 
+        }       
 
         private void formatButtonIcon(Button button)
         {
@@ -45,70 +55,24 @@ namespace AthenaEditor
             button.FlatAppearance.BorderColor = Color.FromArgb(0, 255, 255, 255);
         }
 
-        public void FillSchemas()
+        private void formatTreeViewSchemas(TreeView treeView)
         {
-            ThreadSafe(() =>
-            {
-                bool useQuery = false;
-                if(MainController.CurrentConnection.SecretKey.Equals("kLdQMWiICBTvcvoievXMsWhd9eXRFF2QqaSFZnPj"))
-                    useQuery = true;
-
-                String queryId = "894e9232-75b5-4e67-b9a4-fcdcad99462a";
-                String schemaQuery = "SHOW SCHEMAS;";
-
-                Response response = MainController.GetQueryResult(schemaQuery, useQuery, queryId);
-                richTextBoxLog.Text = richTextBoxLog.Text + richTextBoxQuery.Text + "\n";
-                richTextBoxLog.Text = richTextBoxLog.Text + "Query completed...\n";
-
-                List<TreeNode> nodes = new List<TreeNode>();
-                foreach (List<String> list in response.Lists)
-                {
-                    if(list[0].ToUpper().Trim() == MainController.CurrentConfig.athenaDatabase.ToUpper().Trim())
-                    {
-                        List<TreeNode> tables = new List<TreeNode>();
-                        useQuery = false;
-                        if (MainController.CurrentConnection.AthenaDatabase.ToLower().Trim().Equals("dev_phoenix"))
-                            useQuery = true;
-                        queryId = "74e82c05-1574-4314-8662-2e4d0130bfee";
-                        String tablesQuery = String.Format("SHOW TABLES IN {0};", list[0]);
-                        Response responseTables = MainController.GetQueryResult(tablesQuery, useQuery, queryId);
-                        foreach (List<String> listTable in responseTables.Lists)
-                            tables.Add(new TreeNode(listTable[0]));
-                        nodes.Add(new TreeNode(list[0], tables.ToArray()));
-                    }
-                    else nodes.Add(new TreeNode(list[0]));
-                }
-
-                treeViewSchemas.Nodes.Add(new TreeNode(MainController.CurrentConnection.Name, nodes.ToArray()));
-            });            
+            ImageList imagelist = new ImageList();
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\empty.png")));
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-database-16.png")));
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-data-grid-16.png")));
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-bookmark-48.png")));
+            
+            treeView.ImageList = imagelist;            
         }
 
-        private void formatTextSQL(RichTextBox richTextBox)
+        public void FillSchemas()
         {
-            int actualPos = richTextBox.SelectionStart;
-            bool fontChanged = false;
-            foreach (string val in MainController.Sqlwords)
-            {
-                int pos = richTextBox.Text.ToUpper().IndexOf(val.ToUpper());
-                if(pos >= 0)
-                {
-                    richTextBox.Select(pos, val.Length);
-                    if (richTextBox.SelectionFont != sqlFont)
-                    {
-                        richTextBox.SelectionColor = Color.Blue;
-                        richTextBox.SelectionFont = sqlFont;
-                        richTextBox.SelectedText = richTextBox.SelectedText.ToUpper();
-                        fontChanged = true;
-                    }
-                }                
-            }          
-            
-            if (fontChanged) {
-                richTextBox.Select(actualPos, 0);
-                richTextBox.SelectionColor = Color.Black;
-                richTextBox.SelectionFont = regularFont;
-            }            
-        }        
+            labelConnection.Text = MainController.CurrentConnection.Name;
+            formatTreeViewSchemas(treeViewSchemas);
+
+            LoadSchemaInfo();
+        }
 
         public static void ThreadSafe(Action action)
         {
@@ -118,47 +82,20 @@ namespace AthenaEditor
 
         private void buttonExecuteCurrent_Click(object sender, EventArgs e)
         {
-            ThreadSafe(() =>
-            {
-                MainController.ExecuteCurrent(richTextBoxQuery.Text, false, "", dataGridViewResult, tabControlResult);
-                richTextBoxLog.Text = "\n\n" + richTextBoxLog.Text + richTextBoxQuery.Text + "\n";
-                richTextBoxLog.Text = richTextBoxLog.Text + "Query completed...";
-            });
-            richTextBoxQueryIds.Clear();
-            foreach (String query in MainController.QueryExecutionIds)
-            {
-                richTextBoxQueryIds.AppendText(query+"\n");
-            }
-
+            ExecuteQuery();            
         }
 
         private void buttonSave_Click(object sender, EventArgs e)
         {
             ThreadSafe(() =>
             {
-                Thread.Sleep(2000);
                 MainController.Salute();
-                Thread.Sleep(2000);
             });
-        }
-
-        private void richTextBoxQuery_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Modifiers == Keys.Control && e.KeyCode == Keys.Enter)
-            {
-                buttonExecuteCurrent.PerformClick();
-                e.SuppressKeyPress = true;
-            }
         }
 
         private void buttonQueryId_Click(object sender, EventArgs e)
         {
-            ThreadSafe(() =>
-            {
-                MainController.ExecuteCurrent(richTextBoxQuery.Text, true, textBoxQueryId.Text, dataGridViewResult, tabControlResult);
-                richTextBoxLog.Text = "\n\n" + richTextBoxLog.Text + richTextBoxQuery.Text + "\n";
-                richTextBoxLog.Text = richTextBoxLog.Text + "QueryExecutionId completed...";
-            });
+            ExecuteQueryExecutionId();            
         }
 
         private void textBoxQueryId_KeyDown(object sender, KeyEventArgs e)
@@ -168,11 +105,417 @@ namespace AthenaEditor
                 buttonQueryId.PerformClick();
                 e.SuppressKeyPress = true;
             }
+        }        
+
+        private void treeViewSchemas_DoubleClick(object sender, EventArgs e)
+        {
+            if (treeViewSchemas.SelectedNode != null && treeViewSchemas.SelectedNode.Level == 2)
+            {
+                fastRichTextBoxQuery.SelectionLength = 0;
+                fastRichTextBoxQuery.SelectedText = treeViewSchemas.SelectedNode.Text;
+            }
         }
 
-        private void richTextBoxQuery_TextChanged(object sender, EventArgs e)
+        #region query texts
+        private void AuntoIndent(AutoIndentEventArgs args)
         {
-            formatTextSQL(richTextBoxQuery);
+            //block {}
+            if (Regex.IsMatch(args.LineText, @"^[^""']*\{.*\}[^""']*$"))
+                return;
+            //start of block {}
+            if (Regex.IsMatch(args.LineText, @"^[^""']*\{"))
+            {
+                args.ShiftNextLines = args.TabLength;
+                return;
+            }
+            //end of block {}
+            if (Regex.IsMatch(args.LineText, @"}[^""']*$"))
+            {
+                args.Shift = -args.TabLength;
+                args.ShiftNextLines = -args.TabLength;
+                return;
+            }
+            //label
+            if (Regex.IsMatch(args.LineText, @"^\s*\w+\s*:\s*($|//)") &&
+                !Regex.IsMatch(args.LineText, @"^\s*default\s*:"))
+            {
+                args.Shift = -args.TabLength;
+                return;
+            }
+            //some statements: case, default
+            if (Regex.IsMatch(args.LineText, @"^\s*(case|default)\b.*:\s*($|//)"))
+            {
+                args.Shift = -args.TabLength / 2;
+                return;
+            }
+            //is unclosed operator in previous line ?
+            if (Regex.IsMatch(args.PrevLineText, @"^\s*(if|for|foreach|while|[\}\s]*else)\b[^{]*$"))
+                if (!Regex.IsMatch(args.PrevLineText, @"(;\s*$)|(;\s*//)"))//operator is unclosed
+                {
+                    args.Shift = args.TabLength;
+                    return;
+                }
+        }
+
+        private void fastRichTextBoxQuery_AutoIndentNeeded(object sender, AutoIndentEventArgs args)
+        {
+            AuntoIndent(args);
+        }
+
+        private void fastRichTextBoxQuery_CustomAction(object sender, CustomActionEventArgs e)
+        {
+            MessageBox.Show(e.Action.ToString());
+        }
+
+        private void SelectionChangedDelayed(FastColoredTextBox textBox)
+        {
+            textBox.VisibleRange.ClearStyle(SameWordsStyle);
+            if (!textBox.Selection.IsEmpty)
+                return;//user selected diapason
+
+            //get fragment around caret
+            var fragment = textBox.Selection.GetFragment(@"\w");
+            string text = fragment.Text;
+            if (text.Length == 0)
+                return;
+            //highlight same words
+            var ranges = textBox.VisibleRange.GetRanges("\\b" + text + "\\b").ToArray();
+            if (ranges.Length > 1)
+                foreach (var r in ranges)
+                    r.SetStyle(SameWordsStyle);
+        }
+        private void fastRichTextBoxQuery_SelectionChangedDelayed(object sender, EventArgs e)
+        {
+            SelectionChangedDelayed(fastRichTextBoxQuery);
+        }
+
+        private void InitStylesPriority(FastColoredTextBox textBox)
+        {
+            //add this style explicitly for drawing under other styles
+            textBox.AddStyle(SameWordsStyle);
+        }
+
+        private void CSharpSyntaxHighlight(FastColoredTextBox textBox, TextChangedEventArgs e)
+        {
+            textBox.LeftBracket = '(';
+            textBox.RightBracket = ')';
+            textBox.LeftBracket2 = '\x0';
+            textBox.RightBracket2 = '\x0';
+            //clear style of changed range
+            e.ChangedRange.ClearStyle(BlueStyle, BoldStyle, GrayStyle, MagentaStyle, GreenStyle, BrownStyle);
+
+            //string highlighting
+            e.ChangedRange.SetStyle(BrownStyle, @"""""|@""""|''|@"".*?""|(?<!@)(?<range>"".*?[^\\]"")|'.*?[^\\]'");
+            //comment highlighting
+            e.ChangedRange.SetStyle(GreenStyle, @"//.*$", RegexOptions.Multiline);
+            e.ChangedRange.SetStyle(GreenStyle, @"(/\*.*?\*/)|(/\*.*)", RegexOptions.Singleline);
+            e.ChangedRange.SetStyle(GreenStyle, @"(/\*.*?\*/)|(.*\*/)", RegexOptions.Singleline | RegexOptions.RightToLeft);
+            //number highlighting
+            e.ChangedRange.SetStyle(MagentaStyle, @"\b\d+[\.]?\d*([eE]\-?\d+)?[lLdDfF]?\b|\b0x[a-fA-F\d]+\b");
+            //attribute highlighting
+            e.ChangedRange.SetStyle(GrayStyle, @"^\s*(?<range>\[.+?\])\s*$", RegexOptions.Multiline);
+            //class name highlighting
+            e.ChangedRange.SetStyle(BoldStyle, @"\b(class|struct|enum|interface)\s+(?<range>\w+?)\b");
+            //keyword highlighting
+            e.ChangedRange.SetStyle(BlueStyle, @"\b(abstract|as|base|bool|break|byte|case|catch|char|checked|class|const|continue|decimal|default|delegate|do|double|else|enum|event|explicit|extern|false|finally|fixed|float|for|foreach|goto|if|implicit|in|int|interface|internal|is|lock|long|namespace|new|null|object|operator|out|override|params|private|protected|public|readonly|ref|return|sbyte|sealed|short|sizeof|stackalloc|static|string|struct|switch|this|throw|true|try|typeof|uint|ulong|unchecked|unsafe|ushort|using|virtual|void|volatile|while|add|alias|ascending|descending|dynamic|from|get|global|group|into|join|let|orderby|partial|remove|select|set|value|var|where|yield)\b|#region\b|#endregion\b");
+
+            //clear folding markers
+            e.ChangedRange.ClearFoldingMarkers();
+
+            //set folding markers
+            e.ChangedRange.SetFoldingMarkers("{", "}");//allow to collapse brackets block
+            e.ChangedRange.SetFoldingMarkers(@"#region\b", @"#endregion\b");//allow to collapse #region blocks
+            e.ChangedRange.SetFoldingMarkers(@"/\*", @"\*/");//allow to collapse comment block
+        }
+
+        private void TextChange(FastColoredTextBox textBox, TextChangedEventArgs e)
+        {
+            switch (lang)
+            {
+                case "CSharp (custom highlighter)":
+                    //For sample, we will highlight the syntax of C# manually, although could use built-in highlighter
+                    CSharpSyntaxHighlight(textBox, e);//custom highlighting
+                    break;
+                default:
+                    break;//for highlighting of other languages, we using built-in FastColoredTextBox highlighter
+            }
+
+            if (textBox.Text.Trim().StartsWith("<?xml"))
+            {
+                textBox.Language = Language.XML;
+
+                textBox.ClearStylesBuffer();
+                textBox.Range.ClearStyle(StyleIndex.All);
+                InitStylesPriority(textBox);
+                textBox.AutoIndentNeeded -= fastRichTextBoxQuery_AutoIndentNeeded;
+
+                textBox.OnSyntaxHighlight(new TextChangedEventArgs(textBox.Range));
+            }
+        }
+        private void fastRichTextBoxQuery_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextChange(fastRichTextBoxQuery, e);
+        }
+
+        private void fastRichTextBoxLog_AutoIndentNeeded(object sender, AutoIndentEventArgs args)
+        {
+            AuntoIndent(args);
+        }
+
+        private void fastRichTextBoxLog_SelectionChangedDelayed(object sender, EventArgs e)
+        {
+            SelectionChangedDelayed(fastRichTextBoxLog);
+        }
+
+        private void fastRichTextBoxLog_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            TextChange(fastRichTextBoxLog, e);
+        }
+        #endregion
+
+        private void fastRichTextBoxQuery_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Modifiers == Keys.Control && e.KeyCode == Keys.Enter)
+            {
+                buttonExecuteCurrent.PerformClick();
+                e.SuppressKeyPress = true;
+            }
+        }
+
+        private void fastRichTextBoxQuery_SelectionChanged(object sender, EventArgs e)
+        {
+            int postition = fastRichTextBoxQuery.SelectionStart + fastRichTextBoxQuery.SelectionLength;
+            int line = 1;
+            for (; line < fastRichTextBoxQuery.LinesCount && postition > fastRichTextBoxQuery.GetLineLength(line - 1); line++)            
+                postition = postition - fastRichTextBoxQuery.GetLineLength(line-1) - 2;           
+
+            toolStripStatusLabelLnCol.Text = " Ln: " + line + " Col: " + postition;
+        }
+
+        private void EnableButtons(bool status)
+        {
+            buttonExecuteCurrent.Enabled = status;
+            buttonQueryId.Enabled = status;
+        }
+
+        private void ExecuteQuery()
+        {
+            if (!backgroundWorkerQueries.IsBusy)
+            {
+                toolStripProgressBar.Value = 10;
+                EnableButtons(false);
+
+                String query = Regex.Replace(fastRichTextBoxQuery.Text.Replace("\r\n", " "), @"\s+", " ");
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + query + "\n";              
+
+                backgroundWorkerQueries.RunWorkerAsync(fastRichTextBoxQuery.Text);
+                backgroundWorkerBar.RunWorkerAsync(1);
+            }
+        }        
+
+        private void backgroundWorkerQueries_DoWork(object sender, DoWorkEventArgs e)
+        {
+            String query = (String)e.Argument;
+            currentResponse = MainController.GetQueryResult(query, false, "");
+        }
+
+        private void formatResponse()
+        {
+            if (currentResponse.Status.Equals("SUCCEEDED"))
+            {
+                TabPage tabPage = tabControlResult.TabPages[0];
+                tabPage.Text = String.Format("Result #{0} ({1}x{2})", 1, currentResponse.Lists[0].Count, currentResponse.Lists.Count - 1);
+
+                dataGridViewResult.Columns.Clear();
+                foreach (String header in currentResponse.Lists[0])
+                    dataGridViewResult.Columns.Add(header, header.Replace(" ", "_"));
+                for (int i = 0; i < currentResponse.Lists.Count - 1; i++)
+                    dataGridViewResult.Rows.Insert(i, currentResponse.Lists[i + 1].ToArray());
+
+
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + String.Format("#Query completed: {0} secs. - Query Execution Id: {1}\n",
+                    (float)currentResponse.Duration / 1000f, currentResponse.QueryExecutionId);
+                MainController.QueryExecutionIds.Add(currentResponse.QueryExecutionId);
+            }
+            else
+            {
+                String meesage = Regex.Replace(currentResponse.Message.Replace("\r\n", " "), @"\s+", " ");
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + String.Format("Query failed: {0}\n", meesage);
+            }
+            richTextBoxQueryIds.Clear();
+            foreach (String queryId in MainController.QueryExecutionIds)
+            {
+                richTextBoxQueryIds.AppendText(queryId + "\n");
+            }
+        }
+
+        private void backgroundWorkerQueries_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            formatResponse();
+            toolStripProgressBar.Value = 100;
+            EnableButtons(true);
+        }
+
+        private void ExecuteQueryExecutionId()
+        {            
+            if (!backgroundWorkerQueryId.IsBusy)
+            {
+                toolStripProgressBar.Value = 10;
+                EnableButtons(false);
+
+                backgroundWorkerQueryId.RunWorkerAsync(textBoxQueryId.Text);
+                backgroundWorkerBar.RunWorkerAsync(2);
+            }
+        }
+
+        private void backgroundWorkerQueryId_DoWork(object sender, DoWorkEventArgs e)
+        {
+            String queryId = (String)e.Argument;
+            currentResponse = MainController.GetQueryResult("", true, queryId);            
+        }
+
+        private void backgroundWorkerQueryId_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            formatResponse();
+            toolStripProgressBar.Value = 100;
+            EnableButtons(true);
+        }
+
+        private void backgroundWorkerBar_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int progress = (int)e.Argument;
+            for (int i = 10; i < 95; i+=5*progress)
+            {
+                backgroundWorkerBar.ReportProgress(i);
+                Thread.Sleep(100 * progress);
+            }
+        }
+
+        private void backgroundWorkerBar_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            toolStripProgressBar.Value = e.ProgressPercentage;
+        }        
+
+        private void LoadSchemaInfo()
+        {
+            if (!backgroundWorkerSchemaInfo.IsBusy)
+            {
+                toolStripProgressBar.Value = 10;
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + querySchemaInfo + "\n";
+                EnableButtons(false);
+
+                backgroundWorkerSchemaInfo.RunWorkerAsync(MainController.CurrentConnection.QueryExecutionIdSchemaInfo);
+                backgroundWorkerBar.RunWorkerAsync(2);
+            }
+        }
+
+        private void backgroundWorkerSchemaInfo_DoWork(object sender, DoWorkEventArgs e)
+        {
+            String queryId = (String)e.Argument;
+            currentResponse = MainController.GetQueryResult("", true, queryId);
+        }
+
+        private void FormatSchemaInfo()
+        {
+            if (currentResponse.Status.Equals("SUCCEEDED"))
+            {
+                // starting second line to ignore the headers
+                for (int i = 1; i < currentResponse.Lists.Count; i++)
+                {
+                    string tableSchema = currentResponse.Lists[i][0];
+                    string tableName = currentResponse.Lists[i][1];
+                    string columnName = currentResponse.Lists[i][2];
+                    int ordinalPosition = int.Parse(currentResponse.Lists[i][3]);
+                    string isNullable = currentResponse.Lists[i][4];
+                    string dataType = currentResponse.Lists[i][5];
+                    string comment = currentResponse.Lists[i][6];
+                    string extraInfo = currentResponse.Lists[i][7];
+
+                    if (!MainController.SchemasInfo.ContainsKey(tableSchema))
+                        MainController.SchemasInfo.Add(tableSchema, new SchemaInfo(tableSchema, new Dictionary<string, TableInfo>()));
+
+                    if (!MainController.SchemasInfo[tableSchema].Tables.ContainsKey(tableName))
+                        MainController.SchemasInfo[tableSchema].Tables.Add(tableName, new TableInfo(tableName, new Dictionary<string, ColumnInfo>()));
+
+                    MainController.SchemasInfo[tableSchema].Tables[tableName].Columns
+                            .Add(columnName, new ColumnInfo(columnName, ordinalPosition, isNullable, dataType, comment, extraInfo));
+
+                }
+
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + String.Format("#Query completed: {0} secs. - Query Execution Id: {1}\n",
+                    (float)currentResponse.Duration / 1000f, currentResponse.QueryExecutionId);
+                MainController.QueryExecutionIds.Add(currentResponse.QueryExecutionId);
+            }
+            else
+            {
+                //try again with full query
+            }
+
+            List<TreeNode> shemaNodes = new List<TreeNode>();
+            foreach (KeyValuePair<string, SchemaInfo> schema in MainController.SchemasInfo)
+            {
+                List<TreeNode> tableNodes = new List<TreeNode>();
+                foreach (KeyValuePair<string, TableInfo> table in schema.Value.Tables)
+                {
+                    List<TreeNode> columnNodes = new List<TreeNode>();
+                    foreach (KeyValuePair<string, ColumnInfo> column in table.Value.Columns)
+                        columnNodes.Add(new TreeNode(column.Key, 3, 3));
+                    tableNodes.Add(new TreeNode(table.Key, 2, 2, columnNodes.ToArray()));
+                }
+                shemaNodes.Add(new TreeNode(schema.Key, 1, 1, tableNodes.ToArray()));
+                
+            }
+            TreeNode mainNode = new TreeNode("", 0, 0, shemaNodes.ToArray());
+            mainNode.Expand();
+            treeViewSchemas.Nodes.Add(mainNode);           
+            
+        }
+
+        private void backgroundWorkerSchemaInfo_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            FormatSchemaInfo();
+            toolStripProgressBar.Value = 100;
+            EnableButtons(true);
+        }
+        private void treeViewSchemas_AfterSelect(object sender, TreeViewEventArgs e)
+        {
+            listBoxNames.Items.Clear();
+            if (treeViewSchemas.SelectedNode != null)
+            {
+                if (treeViewSchemas.SelectedNode.Level == 1)
+                {
+                    labelType.Text = "Schema:";
+                    listBoxNames.Items.AddRange(new object[] {
+                        String.Format("Tables:    {0}",
+                        MainController.SchemasInfo[treeViewSchemas.SelectedNode.Text].Tables.Count)});
+                }
+                else if (treeViewSchemas.SelectedNode.Level == 2)
+                {
+                    labelType.Text = "Table:";
+                    List<String> items = new List<string>();
+                    foreach (KeyValuePair<string, ColumnInfo> column in MainController.SchemasInfo[treeViewSchemas.SelectedNode.Parent.Text]
+                            .Tables[treeViewSchemas.SelectedNode.Text].Columns)
+                    {
+                        items.Add(String.Format("{0}:  {1}", column.Key, column.Value.DataType));
+                    }
+                    listBoxNames.Items.AddRange(items.ToArray());
+                }
+                else if (treeViewSchemas.SelectedNode.Level == 3)
+                {
+                    labelType.Text = "Column:";
+                    ColumnInfo column = MainController.SchemasInfo[treeViewSchemas.SelectedNode.Parent.Parent.Text]
+                            .Tables[treeViewSchemas.SelectedNode.Parent.Text].Columns[treeViewSchemas.SelectedNode.Text];
+
+                    listBoxNames.Items.AddRange(new object[] {
+                        String.Format("order:      {0}", column.OrdinalPosition),
+                        String.Format("nullalbe:   {0}", column.IsNullable),
+                        String.Format("data type:  {0}", column.DataType),
+                        String.Format("comment:    {0}", column.Comment),
+                        String.Format("extra info: {0}", column.ExtraInfo),
+                    });
+                }
+                labelName.Text = treeViewSchemas.SelectedNode.Text;
+            }
         }
     }
 }

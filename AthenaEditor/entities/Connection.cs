@@ -15,8 +15,11 @@ namespace AthenaEditor.entities
         public String SecretKey { get; set; }
         public String Region { get; set; }
         public String Comment { get; set; }
+        public List<String> TabQueries { get; set; }
+        public String QueryExecutionIdSchemaInfo { get; set; }
 
-        public Connection(string name, string athenaDatabase, string athenaOutputBucket, string accessKeyId, string secretKey, string region, string comment)
+        public Connection(string name, string athenaDatabase, string athenaOutputBucket, string accessKeyId, 
+            string secretKey, string region, string comment, List<string> tabQueries, string queryExecutionIdSchemaInfo)
         {
             Name = name;
             AthenaDatabase = athenaDatabase;
@@ -25,6 +28,8 @@ namespace AthenaEditor.entities
             SecretKey = secretKey;
             Region = region;
             Comment = comment;
+            TabQueries = tabQueries;
+            QueryExecutionIdSchemaInfo = queryExecutionIdSchemaInfo;
         }
     }
 }

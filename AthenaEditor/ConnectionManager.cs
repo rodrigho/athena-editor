@@ -74,7 +74,7 @@ namespace AthenaEditor
             if (!string.IsNullOrEmpty(textBoxName.Text.Trim()))
             {
                 Connection connection = new Connection(textBoxName.Text, textBoxDatabase.Text, textBoxS3bucket.Text, textBoxAccessKeyId.Text,
-                    textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString(), richTextBoxComments.Text);
+                    textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString(), richTextBoxComments.Text, new List<string>(), "");
                 MainController.Connections.Add(connection);
                 listViewConnections.Items.Add(new ListViewItem { ImageIndex = 0, Text = " - " + connection.Name });
             }
