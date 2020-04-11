@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -25,18 +26,19 @@ namespace AthenaEditor.controllers
 
         private static readonly HttpClient httpClient = new HttpClient();
 
-        public HashSet<string> Sqlwords = new HashSet<string>{ "select","from","where","group","order","limit","by","and","inner","join","left","right",
-            "having", "as", "desc", "asc", "not", "having", "like", "describe", "show", "schemas", "tables"};
+        public Dictionary<string, string> TabPageQueries { get; }
 
-        private const String Uri =  "http://127.0.0.1:8081/athena-api/";
+        public const String Uri =  "http://127.0.0.1:8081/athena-api/";
 
         public List<Connection> Connections { get; set; }
 
-        public String RelativePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+        public String RelativePath { get; }
         private MainController()
-        {            
+        {
             QueryExecutionIds = new HashSet<string>();
             SchemasInfo = new Dictionary<string, SchemaInfo>();
+            TabPageQueries = new Dictionary<string, string>();
+            RelativePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
         }
 
         public static MainController GetInstance()
@@ -49,6 +51,7 @@ namespace AthenaEditor.controllers
         public void StartMainForm()
         {
             ConnectionManager.Hide();
+            LoadSQLFiles();
             MainForm = new MainForm();
             MainForm.Closed += (s, args) => ConnectionManager.Close();
             CurrentConfig = new Config(
@@ -57,10 +60,26 @@ namespace AthenaEditor.controllers
                 1000,
                 CurrentConnection.AccessKeyId,
                 CurrentConnection.SecretKey,
-                CurrentConnection.Region);
-            MainForm.Show();
+                CurrentConnection.Region);            
+            MainForm.Show();            
             MainForm.FillSchemas();
-        }        
+        }
+
+        public void SaveConnectionsIntoFile()
+        {
+            string json = JsonConvert.SerializeObject(Connections);
+            string jsonFile = Path.Combine(RelativePath, "connections.json");            
+            File.WriteAllText(jsonFile, json);
+        }
+
+        public void LoadSQLFiles()
+        {
+            foreach(String file in CurrentConnection.TabQueries)
+            {
+                string query = File.ReadAllText(file);
+                TabPageQueries.Add(Path.GetFileName(file).ToLower(CultureInfo.CurrentCulture).Replace(".sql", ""), query);
+            }
+        }
 
         public Response GetQueryResult(String query, bool useQueryId, String queryExecutionId)
         {

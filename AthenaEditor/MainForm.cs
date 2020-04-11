@@ -1,18 +1,19 @@
 ﻿using AthenaEditor.controllers;
 using AthenaEditor.entities;
+using AthenaEditor.util;
 using FastColoredTextBoxNS;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -44,8 +45,38 @@ namespace AthenaEditor
             formatButtonIcon(buttonExecuteSelected);
             formatButtonIcon(buttonSave);
             formatButtonIcon(buttonLoad);
-            formatButtonIcon(buttonQueryId); 
-        }       
+            formatButtonIcon(buttonQueryId);
+            loadTabPages();
+        }
+
+        private void loadTabPages()
+        {
+            bool firstTabSet = false;
+            foreach(KeyValuePair<string, string> entry in MainController.TabPageQueries)
+            {
+                if (!firstTabSet)
+                {
+                    tabQuery.Text = entry.Key;
+                    fastRichTextBoxQuery.Text = entry.Value;
+                    firstTabSet = true;
+                }
+                else addNewPageTab(entry.Key);                
+            }
+            tabControlQuery.SelectedIndex = 0;
+        }
+
+        private TabPage addNewPageTab(string name)
+        {
+            TabPage newPage = new TabPage(name);
+            newPage.Location = new Point(4, 22);
+            newPage.Name = String.Format("tabQuery{0}", tabControlQuery.TabPages.Count + 1);
+            newPage.Padding = new Padding(3);
+            newPage.Size = new Size(584, 176);
+            newPage.TabIndex = 0;
+            newPage.UseVisualStyleBackColor = true;
+            tabControlQuery.TabPages.Add(newPage);
+            return newPage;
+        }
 
         private void formatButtonIcon(Button button)
         {
@@ -59,11 +90,12 @@ namespace AthenaEditor
         {
             ImageList imagelist = new ImageList();
             imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\empty.png")));
-            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-database-16.png")));
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\database.png")));
             imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-data-grid-16.png")));
-            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\icons8-bookmark-48.png")));
-            
-            treeView.ImageList = imagelist;            
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\type.png")));
+            imagelist.Images.Add(Image.FromFile(Path.Combine(MainController.RelativePath, "icons\\databaseOk.png")));
+
+            treeView.ImageList = imagelist;
         }
 
         public void FillSchemas()
@@ -82,20 +114,12 @@ namespace AthenaEditor
 
         private void buttonExecuteCurrent_Click(object sender, EventArgs e)
         {
-            ExecuteQuery();            
-        }
-
-        private void buttonSave_Click(object sender, EventArgs e)
-        {
-            ThreadSafe(() =>
-            {
-                MainController.Salute();
-            });
+            ExecuteQuery();
         }
 
         private void buttonQueryId_Click(object sender, EventArgs e)
         {
-            ExecuteQueryExecutionId();            
+            ExecuteQueryExecutionId();
         }
 
         private void textBoxQueryId_KeyDown(object sender, KeyEventArgs e)
@@ -105,7 +129,7 @@ namespace AthenaEditor
                 buttonQueryId.PerformClick();
                 e.SuppressKeyPress = true;
             }
-        }        
+        }
 
         private void treeViewSchemas_DoubleClick(object sender, EventArgs e)
         {
@@ -286,8 +310,8 @@ namespace AthenaEditor
         {
             int postition = fastRichTextBoxQuery.SelectionStart + fastRichTextBoxQuery.SelectionLength;
             int line = 1;
-            for (; line < fastRichTextBoxQuery.LinesCount && postition > fastRichTextBoxQuery.GetLineLength(line - 1); line++)            
-                postition = postition - fastRichTextBoxQuery.GetLineLength(line-1) - 2;           
+            for (; line < fastRichTextBoxQuery.LinesCount && postition > fastRichTextBoxQuery.GetLineLength(line - 1); line++)
+                postition = postition - fastRichTextBoxQuery.GetLineLength(line - 1) - 2;
 
             toolStripStatusLabelLnCol.Text = " Ln: " + line + " Col: " + postition;
         }
@@ -306,17 +330,30 @@ namespace AthenaEditor
                 EnableButtons(false);
 
                 String query = Regex.Replace(fastRichTextBoxQuery.Text.Replace("\r\n", " "), @"\s+", " ");
-                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + query + "\n";              
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + query + "\n";
 
                 backgroundWorkerQueries.RunWorkerAsync(fastRichTextBoxQuery.Text);
                 backgroundWorkerBar.RunWorkerAsync(1);
             }
-        }        
+        }
+
+        private void GetQueryResult(String query, bool useQueryId, String queryExecutionId)
+        {
+            try
+            {
+                currentResponse = MainController.GetQueryResult(query, useQueryId, queryExecutionId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Process.GetCurrentProcess().Kill();
+            }
+        }
 
         private void backgroundWorkerQueries_DoWork(object sender, DoWorkEventArgs e)
         {
             String query = (String)e.Argument;
-            currentResponse = MainController.GetQueryResult(query, false, "");
+            GetQueryResult(query, false, "");
         }
 
         private void formatResponse()
@@ -357,7 +394,7 @@ namespace AthenaEditor
         }
 
         private void ExecuteQueryExecutionId()
-        {            
+        {
             if (!backgroundWorkerQueryId.IsBusy)
             {
                 toolStripProgressBar.Value = 10;
@@ -371,7 +408,7 @@ namespace AthenaEditor
         private void backgroundWorkerQueryId_DoWork(object sender, DoWorkEventArgs e)
         {
             String queryId = (String)e.Argument;
-            currentResponse = MainController.GetQueryResult("", true, queryId);            
+            GetQueryResult("", true, queryId);
         }
 
         private void backgroundWorkerQueryId_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -383,8 +420,13 @@ namespace AthenaEditor
 
         private void backgroundWorkerBar_DoWork(object sender, DoWorkEventArgs e)
         {
+            if (backgroundWorkerBar.CancellationPending)
+            {
+                e.Cancel = true;
+                return;
+            }
             int progress = (int)e.Argument;
-            for (int i = 10; i < 95; i+=5*progress)
+            for (int i = 10; i < 95; i += 5 * progress)
             {
                 backgroundWorkerBar.ReportProgress(i);
                 Thread.Sleep(100 * progress);
@@ -394,7 +436,12 @@ namespace AthenaEditor
         private void backgroundWorkerBar_ProgressChanged(object sender, ProgressChangedEventArgs e)
         {
             toolStripProgressBar.Value = e.ProgressPercentage;
-        }        
+        }
+
+        private void backgroundWorkerBar_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            toolStripProgressBar.Value = 100;
+        }
 
         private void LoadSchemaInfo()
         {
@@ -412,7 +459,7 @@ namespace AthenaEditor
         private void backgroundWorkerSchemaInfo_DoWork(object sender, DoWorkEventArgs e)
         {
             String queryId = (String)e.Argument;
-            currentResponse = MainController.GetQueryResult("", true, queryId);
+            GetQueryResult("", true, queryId);
         }
 
         private void FormatSchemaInfo()
@@ -462,19 +509,21 @@ namespace AthenaEditor
                         columnNodes.Add(new TreeNode(column.Key, 3, 3));
                     tableNodes.Add(new TreeNode(table.Key, 2, 2, columnNodes.ToArray()));
                 }
-                shemaNodes.Add(new TreeNode(schema.Key, 1, 1, tableNodes.ToArray()));
-                
+                if (schema.Key.Equals(MainController.CurrentConnection.AthenaDatabase, StringComparison.OrdinalIgnoreCase))
+                    shemaNodes.Add(new TreeNode(schema.Key, 4, 4, tableNodes.ToArray()));
+                else shemaNodes.Add(new TreeNode(schema.Key, 1, 1, tableNodes.ToArray()));
             }
             TreeNode mainNode = new TreeNode("", 0, 0, shemaNodes.ToArray());
             mainNode.Expand();
-            treeViewSchemas.Nodes.Add(mainNode);           
-            
+            treeViewSchemas.Nodes.Add(mainNode);
+
         }
 
         private void backgroundWorkerSchemaInfo_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
             FormatSchemaInfo();
-            toolStripProgressBar.Value = 100;
+            backgroundWorkerBar.CancelAsync();
+            toolStripProgressBar.Value = 0;
             EnableButtons(true);
         }
         private void treeViewSchemas_AfterSelect(object sender, TreeViewEventArgs e)
@@ -517,5 +566,73 @@ namespace AthenaEditor
                 labelName.Text = treeViewSchemas.SelectedNode.Text;
             }
         }
+
+        // add query
+        private void buttonAddTab_Click(object sender, EventArgs e)
+        {
+            tabControlQuery.SelectTab(addNewPageTab(String.Format("Query #{0}", tabControlQuery.TabPages.Count + 1)));
+        }
+        private void tabControlQuery_Selected(object sender, TabControlEventArgs e)
+        {
+            if(MainController.TabPageQueries.ContainsKey(e.TabPage.Text))
+                fastRichTextBoxQuery.Text = MainController.TabPageQueries[e.TabPage.Text];
+            else
+            {
+                fastRichTextBoxQuery.Text = "";
+                MainController.TabPageQueries.Add(e.TabPage.Text, "");
+            }
+            tabControlQuery.SelectedTab.Controls.Add(fastRichTextBoxQuery);
+        }
+        private void tabControlQuery_Deselecting(object sender, TabControlCancelEventArgs e)
+        {
+            Console.WriteLine("Before: " + e.TabPage.Text);
+            if (MainController.TabPageQueries.ContainsKey(e.TabPage.Text))
+                MainController.TabPageQueries[e.TabPage.Text] = fastRichTextBoxQuery.Text;
+            else MainController.TabPageQueries.Add(e.TabPage.Text, fastRichTextBoxQuery.Text);
+        }
+
+        // save sql
+        private void buttonSave_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+            saveFileDialog1.Filter = "SQL file|*.sql";
+            saveFileDialog1.Title = "Save an SQL File";
+            saveFileDialog1.ShowDialog();
+
+            if (!saveFileDialog1.FileName.Equals(""))
+            {
+                FileStream fs = (FileStream)saveFileDialog1.OpenFile();
+                switch (saveFileDialog1.FilterIndex)
+                {
+                    case 1:
+                        try
+                        {
+                            // save the sql query
+                            byte[] bytes = Encoding.UTF8.GetBytes(fastRichTextBoxQuery.Text);
+                            fs.Write(bytes, 0, bytes.Length);
+
+                            // update conections file
+                            MainController.CurrentConnection.TabQueries.Add(fs.Name);
+                            MainController.Connections
+                                .Where(a => a.Name == MainController.CurrentConnection.Name)
+                                .Select(c => MainController.CurrentConnection).ToList();                            
+                            MainController.SaveConnectionsIntoFile();
+                            
+                            string oldName = tabControlQuery.SelectedTab.Text;
+                            tabControlQuery.SelectedTab.Text = Path.GetFileName(fs.Name).ToLower(CultureInfo.CurrentCulture).Replace(".sql", "");
+                            Util.RenameKey(MainController.TabPageQueries, oldName, tabControlQuery.SelectedTab.Text);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        }
+                        break;
+                }
+
+                fs.Close();
+            }
+        }
+
+        
     }
 }
