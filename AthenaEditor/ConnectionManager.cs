@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -73,60 +74,41 @@ namespace AthenaEditor
         {
             if (!string.IsNullOrEmpty(textBoxName.Text.Trim()))
             {
-                Connection connection = new Connection(textBoxName.Text, textBoxDatabase.Text, textBoxS3bucket.Text, textBoxAccessKeyId.Text,
-                    textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString(), richTextBoxComments.Text, new List<string>(), "");
-                MainController.Connections.Add(connection);
-                listViewConnections.Items.Add(new ListViewItem { ImageIndex = 0, Text = " - " + connection.Name });
+                bool createNewConn = true;
+                foreach(Connection conn in MainController.Connections)
+                {
+                    if (conn.Name.Equals(textBoxName.Text.Trim()))
+                    {
+                        conn.AthenaDatabase = textBoxDatabase.Text;
+                        conn.AthenaOutputBucket = textBoxS3bucket.Text;
+                        conn.AccessKeyId = textBoxAccessKeyId.Text;
+                        conn.SecretKey = textBoxSecretKey.Text;
+                        conn.Region = comboBoxRegion.SelectedItem.ToString();
+                        conn.Comment = richTextBoxComments.Text;
+                        createNewConn = false;
+                        break;
+                    }
+                }
+
+                if (createNewConn)
+                {
+                    Connection connection = new Connection(textBoxName.Text, textBoxDatabase.Text, textBoxS3bucket.Text, textBoxAccessKeyId.Text,
+                        textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString(), richTextBoxComments.Text, new List<string>(), "");
+                    MainController.Connections.Add(connection);
+                    listViewConnections.Items.Add(new ListViewItem { ImageIndex = 0, Text = " - " + connection.Name });
+                }
             }
-
-            string json = JsonConvert.SerializeObject(MainController.Connections);
-            string jsonFile = Path.Combine(MainController.RelativePath, "connections.json");
-
-            //write string to file
-            File.WriteAllText(jsonFile, json);            
+            MainController.SaveConnectionsIntoFile();
         }
-
+        
         private void buttonNew_Click(object sender, EventArgs e)
         {
+            cleanInputs();
+            listViewConnections.HideSelection = true;
             textBoxName.Focus();
         }
 
         private void listViewConnections_ItemSelectionChanged(object sender, ListViewItemSelectionChangedEventArgs e)
-        {
-            
-        }
-
-        private void buttonOpen_Click(object sender, EventArgs e)
-        {
-            MainController.StartMainForm();
-        }
-
-        //attributes
-        public ListView ListViewConnections { get { return listViewConnections; } }
-
-        private void buttonDelete_Click(object sender, EventArgs e)
-        {
-            if (listViewConnections.SelectedItems.Count > 0)
-            {
-                int index = listViewConnections.SelectedItems[0].Index;
-                MainController.Connections.RemoveAt(index);
-                listViewConnections.Items.RemoveAt(index);
-                buttonDelete.Enabled = false;
-                textBoxName.Text = "";
-                textBoxDatabase.Text = "";
-                textBoxS3bucket.Text = "";
-                textBoxAccessKeyId.Text = "";
-                textBoxSecretKey.Text = "";
-                comboBoxRegion.SelectedItem = null;
-                richTextBoxComments.Text = "";
-            }
-            else
-            {
-                MessageBox.Show(TextConstants.ErrorDeleteConnections, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private void listViewConnections_SelectedIndexChanged(object sender, EventArgs e)
         {
             buttonDelete.Enabled = true;
             if (listViewConnections.SelectedItems.Count > 0)
@@ -140,6 +122,64 @@ namespace AthenaEditor
                 textBoxSecretKey.Text = MainController.CurrentConnection.SecretKey;
                 comboBoxRegion.SelectedItem = MainController.CurrentConnection.Region;
                 richTextBoxComments.Text = MainController.CurrentConnection.Comment;
+            }
+        }
+
+        private void buttonOpen_Click(object sender, EventArgs e)
+        {
+            MainController.StartMainForm();
+        }
+
+        //attributes
+        public ListView ListViewConnections { get { return listViewConnections; } }
+
+        private void cleanInputs()
+        {
+            textBoxName.Text = "";
+            textBoxDatabase.Text = "";
+            textBoxS3bucket.Text = "";
+            textBoxAccessKeyId.Text = "";
+            textBoxSecretKey.Text = "";
+            comboBoxRegion.SelectedItem = null;
+            richTextBoxComments.Text = "";
+        }
+
+        private void buttonDelete_Click(object sender, EventArgs e)
+        {
+            if (listViewConnections.SelectedItems.Count > 0)
+            {
+                int index = listViewConnections.SelectedItems[0].Index;
+                MainController.Connections.Remove(MainController.CurrentConnection);
+                listViewConnections.Items.RemoveAt(index);
+                buttonDelete.Enabled = false;
+                cleanInputs();
+                MainController.SaveConnectionsIntoFile();
+            }
+            else
+            {
+                MessageBox.Show(TextConstants.ErrorDeleteConnections, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private void buttonTest_Click(object sender, EventArgs e)
+        {
+            Config config = new Config(textBoxDatabase.Text, textBoxS3bucket.Text, 1000, textBoxAccessKeyId.Text, textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString());
+            try
+            {
+                Response response = HttpClientService.Post(JsonConvert.SerializeObject(config), String.Format("{0}test-connection", MainController.Uri));
+                if (response.Status.Equals(TextConstants.SUCCEEDED, StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(TextConstants.SuccessConnection, TextConstants.Information, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    MessageBox.Show(TextConstants.FailedConnection, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Process.GetCurrentProcess().Kill();
             }
         }
     }

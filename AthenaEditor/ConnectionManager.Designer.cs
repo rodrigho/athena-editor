@@ -113,7 +113,6 @@
             this.listViewConnections.UseCompatibleStateImageBehavior = false;
             this.listViewConnections.View = System.Windows.Forms.View.Details;
             this.listViewConnections.ItemSelectionChanged += new System.Windows.Forms.ListViewItemSelectionChangedEventHandler(this.listViewConnections_ItemSelectionChanged);
-            this.listViewConnections.SelectedIndexChanged += new System.EventHandler(this.listViewConnections_SelectedIndexChanged);
             // 
             // labelConnection
             // 
@@ -357,6 +356,7 @@
             this.buttonTest.TabIndex = 2;
             this.buttonTest.Text = "Test";
             this.buttonTest.UseVisualStyleBackColor = false;
+            this.buttonTest.Click += new System.EventHandler(this.buttonTest_Click);
             // 
             // buttonDelete
             // 
