@@ -32,13 +32,20 @@ namespace AthenaEditor.controllers
         public static Response Post(String body, String url)
         {
             Response response;
-            using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+            try
             {
-                HttpResponseMessage httpResponseMessage = httpClient.PostAsync(url, content).Result;                
+                using (var content = new StringContent(body, Encoding.UTF8, "application/json"))
+                {
+                    HttpResponseMessage httpResponseMessage = httpClient.PostAsync(url, content).Result;
 
-                string returnValue = httpResponseMessage.Content.ReadAsStringAsync().Result;
+                    string returnValue = httpResponseMessage.Content.ReadAsStringAsync().Result;
 
-                response = JsonConvert.DeserializeObject<Response>(returnValue);
+                    response = JsonConvert.DeserializeObject<Response>(returnValue);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("No api connected", ex.InnerException);
             }
             return response;
         }               
