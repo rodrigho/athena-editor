@@ -589,6 +589,7 @@
             this.buttonLoad.Size = new System.Drawing.Size(21, 22);
             this.buttonLoad.TabIndex = 0;
             this.buttonLoad.UseVisualStyleBackColor = true;
+            this.buttonLoad.Click += new System.EventHandler(this.buttonLoad_Click);
             // 
             // buttonSave
             // 

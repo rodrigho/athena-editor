@@ -633,6 +633,31 @@ namespace AthenaEditor
             }
         }
 
-        
+        private void buttonLoad_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Filter = "SQL file|*.sql";
+            openFileDialog1.Title = "Open an SQL File";
+            openFileDialog1.ShowDialog();
+
+            if (!openFileDialog1.FileName.Equals(""))
+            {
+                FileStream fs = (FileStream)openFileDialog1.OpenFile();
+                string fileContents;
+                using (StreamReader reader = new StreamReader(fs))
+                {
+                    fileContents = reader.ReadToEnd();
+                }
+
+                // update conections file
+                String nameQuery = Path.GetFileName(fs.Name).ToLower(CultureInfo.CurrentCulture).Replace(".sql", "");
+                MainController.CurrentConnection.TabQueries.Add(fs.Name);
+                MainController.TabPageQueries.Add(nameQuery, fileContents);
+                MainController.SaveConnectionsIntoFile();
+                tabControlQuery.SelectTab(addNewPageTab(nameQuery));
+
+                fs.Close();
+            }
+        }
     }
 }

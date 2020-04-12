@@ -7,9 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Forms;
 
 namespace AthenaEditor.controllers
 {
@@ -28,7 +25,7 @@ namespace AthenaEditor.controllers
 
         public Dictionary<string, string> TabPageQueries { get; }
 
-        public const String Uri =  "http://127.0.0.1:8081/athena-api/";
+        public const String Uri = "http://127.0.0.1:8081/athena-api/";
 
         public List<Connection> Connections { get; set; }
 
@@ -60,24 +57,32 @@ namespace AthenaEditor.controllers
                 1000,
                 CurrentConnection.AccessKeyId,
                 CurrentConnection.SecretKey,
-                CurrentConnection.Region);            
-            MainForm.Show();            
+                CurrentConnection.Region);
+            MainForm.Show();
             MainForm.FillSchemas();
         }
 
         public void SaveConnectionsIntoFile()
         {
             string json = JsonConvert.SerializeObject(Connections);
-            string jsonFile = Path.Combine(RelativePath, "connections.json");            
+            string jsonFile = Path.Combine(RelativePath, "connections.json");
             File.WriteAllText(jsonFile, json);
         }
 
         public void LoadSQLFiles()
         {
-            foreach(String file in CurrentConnection.TabQueries)
+            foreach (String file in CurrentConnection.TabQueries.ToList())
             {
-                string query = File.ReadAllText(file);
-                TabPageQueries.Add(Path.GetFileName(file).ToLower(CultureInfo.CurrentCulture).Replace(".sql", ""), query);
+                try
+                {
+                    string query = File.ReadAllText(file);
+                    TabPageQueries.Add(Path.GetFileName(file).ToLower(CultureInfo.CurrentCulture).Replace(".sql", ""), query);
+                }
+                catch (Exception ex)
+                {
+                    CurrentConnection.TabQueries.Remove(file);
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
 
