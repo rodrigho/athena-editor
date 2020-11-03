@@ -163,10 +163,10 @@ namespace AthenaEditor
 
         private void buttonTest_Click(object sender, EventArgs e)
         {
-            Config config = new Config(textBoxDatabase.Text, textBoxS3bucket.Text, 1000, textBoxAccessKeyId.Text, textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString());
+            Config config = new Config(textBoxDatabase.Text, textBoxS3bucket.Text, 1000, textBoxAccessKeyId.Text, textBoxSecretKey.Text, comboBoxRegion.SelectedItem.ToString(), true);
             try
             {
-                Response response = HttpClientService.Post(JsonConvert.SerializeObject(config), String.Format("{0}test-connection", MainController.Uri));
+                Response response = HttpClientService.Post(JsonConvert.SerializeObject(config), String.Format("{0}test-connection", MainController.Uri), false);
                 if (response.Status.Equals(TextConstants.SUCCEEDED, StringComparison.OrdinalIgnoreCase))
                 {
                     MessageBox.Show(TextConstants.SuccessConnection, TextConstants.Information, MessageBoxButtons.OK, MessageBoxIcon.Information);

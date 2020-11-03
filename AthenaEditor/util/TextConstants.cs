@@ -21,5 +21,9 @@ namespace AthenaEditor.util
         public static string Information = "Information";
 
         public static string SuccessConnection = "Successfully made the Athena connection";
+
+        //Queries
+        public static string QueryInfoSchema = "SELECT table_schema, table_name, column_name, ordinal_position, is_nullable, data_type, comment, extra_info FROM information_schema.columns;";
+        
     }
 }

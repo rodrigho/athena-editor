@@ -21,11 +21,13 @@ namespace AthenaEditor.controllers
         public Config CurrentConfig { get; set; }
         public Connection CurrentConnection { get; set; }
 
+        public String CurrentQEId { get; set; }
+
         private static readonly HttpClient httpClient = new HttpClient();
 
         public Dictionary<string, string> TabPageQueries { get; }
 
-        public const String Uri = "http://127.0.0.1:8081/athena-api/";
+        public const String Uri = "http://52.57.85.129:9012/athena-api/";
 
         public List<Connection> Connections { get; set; }
 
@@ -36,6 +38,7 @@ namespace AthenaEditor.controllers
             SchemasInfo = new Dictionary<string, SchemaInfo>();
             TabPageQueries = new Dictionary<string, string>();
             RelativePath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            CurrentQEId = "";
         }
 
         public static MainController GetInstance()
@@ -57,7 +60,8 @@ namespace AthenaEditor.controllers
                 1000,
                 CurrentConnection.AccessKeyId,
                 CurrentConnection.SecretKey,
-                CurrentConnection.Region);
+                CurrentConnection.Region, 
+                true);
             MainForm.Show();
             MainForm.FillSchemas();
         }
@@ -93,6 +97,14 @@ namespace AthenaEditor.controllers
             CurrentConfig.useQueryId = useQueryId;
             CurrentConfig.queryExecutionId = queryExecutionId;
             return HttpClientService.Post(JsonConvert.SerializeObject(CurrentConfig), String.Format("{0}execute", Uri));
+        }
+
+        public Response GetStopQuery(String queryExecutionId)
+        {
+            CurrentConfig.queries.Clear();
+            CurrentConfig.useQueryId = true;
+            CurrentConfig.queryExecutionId = queryExecutionId;
+            return HttpClientService.Post(JsonConvert.SerializeObject(CurrentConfig), String.Format("{0}stop", Uri));
         }
 
         public async void Salute()

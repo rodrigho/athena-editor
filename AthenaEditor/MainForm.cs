@@ -2,6 +2,7 @@
 using AthenaEditor.entities;
 using AthenaEditor.util;
 using FastColoredTextBoxNS;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,6 +12,7 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -22,7 +24,7 @@ namespace AthenaEditor
     public partial class MainForm : Form
     {
         private string lang = "CSharp (custom highlighter)";
-        private string querySchemaInfo = "SELECT table_schema, table_name, column_name, ordinal_position, is_nullable, data_type, comment, extra_info FROM information_schema.columns;";
+        
         //styles
         private TextStyle BlueStyle = new TextStyle(Brushes.Blue, null, FontStyle.Regular);
         private TextStyle BoldStyle = new TextStyle(null, null, FontStyle.Bold | FontStyle.Underline);
@@ -46,6 +48,9 @@ namespace AthenaEditor
             formatButtonIcon(buttonSave);
             formatButtonIcon(buttonLoad);
             formatButtonIcon(buttonQueryId);
+            formatButtonIcon(buttonAddTab);
+            formatButtonIcon(buttonReloadConnections);
+            formatButtonIcon(buttonCancelQuery);
             loadTabPages();
         }
 
@@ -103,7 +108,7 @@ namespace AthenaEditor
             labelConnection.Text = MainController.CurrentConnection.Name;
             formatTreeViewSchemas(treeViewSchemas);
 
-            LoadSchemaInfo();
+            LoadSchemaInfo(true);
         }
 
         public static void ThreadSafe(Action action)
@@ -329,19 +334,44 @@ namespace AthenaEditor
                 toolStripProgressBar.Value = 10;
                 EnableButtons(false);
 
-                String query = Regex.Replace(fastRichTextBoxQuery.Text.Replace("\r\n", " "), @"\s+", " ");
+                String query = Regex.Replace(fastRichTextBoxQuery.Text.Split(';')[0].Replace("\r\n", " "), @"\s+", " ");
                 fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + query + "\n";
 
-                backgroundWorkerQueries.RunWorkerAsync(fastRichTextBoxQuery.Text);
+                backgroundWorkerQueries.RunWorkerAsync(fastRichTextBoxQuery.Text.Split(';')[0]);
                 backgroundWorkerBar.RunWorkerAsync(1);
             }
         }
 
-        private void GetQueryResult(String query, bool useQueryId, String queryExecutionId)
+        private void StopQuery()
+        {
+            if (!backgroundWorkerStop.IsBusy)
+            {
+                EnableButtons(false);
+
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + "Stopping query execution Id: " + MainController.CurrentQEId + "\n";
+
+                backgroundWorkerStop.RunWorkerAsync(MainController.CurrentQEId);                
+            }
+        }
+
+        private void GetQueryResult(String query, bool useQueryExecutionId, String queryExecutionId)
         {
             try
             {
-                currentResponse = MainController.GetQueryResult(query, useQueryId, queryExecutionId);
+                currentResponse = MainController.GetQueryResult(query, useQueryExecutionId, queryExecutionId);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, TextConstants.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Process.GetCurrentProcess().Kill();
+            }
+        }
+
+        private void GetStopQuery(String queryExecutionId)
+        {
+            try
+            {
+                currentResponse = MainController.GetStopQuery(queryExecutionId);
             }
             catch (Exception ex)
             {
@@ -443,80 +473,97 @@ namespace AthenaEditor
             toolStripProgressBar.Value = 100;
         }
 
-        private void LoadSchemaInfo()
+        private void LoadSchemaInfo(bool useQueryExecutionId)
         {
             if (!backgroundWorkerSchemaInfo.IsBusy)
             {
                 toolStripProgressBar.Value = 10;
-                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + querySchemaInfo + "\n";
+                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + TextConstants.QueryInfoSchema + "\n";
                 EnableButtons(false);
 
-                backgroundWorkerSchemaInfo.RunWorkerAsync(MainController.CurrentConnection.QueryExecutionIdSchemaInfo);
-                backgroundWorkerBar.RunWorkerAsync(2);
+                backgroundWorkerSchemaInfo.RunWorkerAsync(useQueryExecutionId && MainController.CurrentConnection.QueryExecutionIdSchemaInfo.Length == 36 ? 
+                    MainController.CurrentConnection.QueryExecutionIdSchemaInfo : TextConstants.QueryInfoSchema);
+                backgroundWorkerBar.RunWorkerAsync(useQueryExecutionId ? 2 : 1);
             }
         }
 
         private void backgroundWorkerSchemaInfo_DoWork(object sender, DoWorkEventArgs e)
         {
-            String queryId = (String)e.Argument;
-            GetQueryResult("", true, queryId);
+            String query = (String)e.Argument;
+            bool useQueryExcutionId = query.Length == 36;
+            GetQueryResult(query, useQueryExcutionId, query);
         }
 
         private void FormatSchemaInfo()
         {
-            if (currentResponse.Status.Equals("SUCCEEDED"))
+            try
             {
-                // starting second line to ignore the headers
-                for (int i = 1; i < currentResponse.Lists.Count; i++)
+                if (currentResponse.Status.Equals("SUCCEEDED"))
                 {
-                    string tableSchema = currentResponse.Lists[i][0];
-                    string tableName = currentResponse.Lists[i][1];
-                    string columnName = currentResponse.Lists[i][2];
-                    int ordinalPosition = int.Parse(currentResponse.Lists[i][3]);
-                    string isNullable = currentResponse.Lists[i][4];
-                    string dataType = currentResponse.Lists[i][5];
-                    string comment = currentResponse.Lists[i][6];
-                    string extraInfo = currentResponse.Lists[i][7];
+                    MainController.SchemasInfo.Clear();
+                    // starting second line to ignore the headers
+                    for (int i = 1; i < currentResponse.Lists.Count; i++)
+                    {
+                        string tableSchema = currentResponse.Lists[i][0];
+                        string tableName = currentResponse.Lists[i][1];
+                        string columnName = currentResponse.Lists[i][2];
+                        int ordinalPosition = int.Parse(currentResponse.Lists[i][3]);
+                        string isNullable = currentResponse.Lists[i][4];
+                        string dataType = currentResponse.Lists[i][5];
+                        string comment = currentResponse.Lists[i][6];
+                        string extraInfo = currentResponse.Lists[i][7];
 
-                    if (!MainController.SchemasInfo.ContainsKey(tableSchema))
-                        MainController.SchemasInfo.Add(tableSchema, new SchemaInfo(tableSchema, new Dictionary<string, TableInfo>()));
+                        if (!MainController.SchemasInfo.ContainsKey(tableSchema))
+                            MainController.SchemasInfo.Add(tableSchema, new SchemaInfo(tableSchema, new Dictionary<string, TableInfo>()));
 
-                    if (!MainController.SchemasInfo[tableSchema].Tables.ContainsKey(tableName))
-                        MainController.SchemasInfo[tableSchema].Tables.Add(tableName, new TableInfo(tableName, new Dictionary<string, ColumnInfo>()));
+                        if (!MainController.SchemasInfo[tableSchema].Tables.ContainsKey(tableName))
+                            MainController.SchemasInfo[tableSchema].Tables.Add(tableName, new TableInfo(tableName, new Dictionary<string, ColumnInfo>()));
 
-                    MainController.SchemasInfo[tableSchema].Tables[tableName].Columns
-                            .Add(columnName, new ColumnInfo(columnName, ordinalPosition, isNullable, dataType, comment, extraInfo));
+                        MainController.SchemasInfo[tableSchema].Tables[tableName].Columns
+                                .Add(columnName, new ColumnInfo(columnName, ordinalPosition, isNullable, dataType, comment, extraInfo));
 
+                    }
+
+                    fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + String.Format("#Query completed: {0} secs. - Query Execution Id: {1}\n",
+                        (float)currentResponse.Duration / 1000f, currentResponse.QueryExecutionId);
+                    MainController.QueryExecutionIds.Add(currentResponse.QueryExecutionId);
+
+                    // update conections schema query id
+                    if (!MainController.CurrentConnection.QueryExecutionIdSchemaInfo.Equals(currentResponse.QueryExecutionId, StringComparison.CurrentCulture))
+                    {
+                        MainController.CurrentConnection.QueryExecutionIdSchemaInfo = currentResponse.QueryExecutionId;
+                        MainController.Connections
+                            .Where(a => a.Name == MainController.CurrentConnection.Name)
+                            .Select(c => MainController.CurrentConnection).ToList();
+                        MainController.SaveConnectionsIntoFile();
+                    }
                 }
 
-                fastRichTextBoxLog.Text = fastRichTextBoxLog.Text + String.Format("#Query completed: {0} secs. - Query Execution Id: {1}\n",
-                    (float)currentResponse.Duration / 1000f, currentResponse.QueryExecutionId);
-                MainController.QueryExecutionIds.Add(currentResponse.QueryExecutionId);
-            }
-            else
-            {
-                //try again with full query
-            }
-
-            List<TreeNode> shemaNodes = new List<TreeNode>();
-            foreach (KeyValuePair<string, SchemaInfo> schema in MainController.SchemasInfo)
-            {
-                List<TreeNode> tableNodes = new List<TreeNode>();
-                foreach (KeyValuePair<string, TableInfo> table in schema.Value.Tables)
+                treeViewSchemas.Nodes.Clear();
+                List<TreeNode> shemaNodes = new List<TreeNode>();
+                foreach (KeyValuePair<string, SchemaInfo> schema in MainController.SchemasInfo)
                 {
-                    List<TreeNode> columnNodes = new List<TreeNode>();
-                    foreach (KeyValuePair<string, ColumnInfo> column in table.Value.Columns)
-                        columnNodes.Add(new TreeNode(column.Key, 3, 3));
-                    tableNodes.Add(new TreeNode(table.Key, 2, 2, columnNodes.ToArray()));
+                    List<TreeNode> tableNodes = new List<TreeNode>();
+                    foreach (KeyValuePair<string, TableInfo> table in schema.Value.Tables)
+                    {
+                        List<TreeNode> columnNodes = new List<TreeNode>();
+                        foreach (KeyValuePair<string, ColumnInfo> column in table.Value.Columns)
+                            columnNodes.Add(new TreeNode(column.Key, 3, 3));
+                        tableNodes.Add(new TreeNode(table.Key, 2, 2, columnNodes.ToArray()));
+                    }
+                    if (schema.Key.Equals(MainController.CurrentConnection.AthenaDatabase, StringComparison.OrdinalIgnoreCase))
+                        shemaNodes.Add(new TreeNode(schema.Key, 4, 4, tableNodes.ToArray()));
+                    else shemaNodes.Add(new TreeNode(schema.Key, 1, 1, tableNodes.ToArray()));
                 }
-                if (schema.Key.Equals(MainController.CurrentConnection.AthenaDatabase, StringComparison.OrdinalIgnoreCase))
-                    shemaNodes.Add(new TreeNode(schema.Key, 4, 4, tableNodes.ToArray()));
-                else shemaNodes.Add(new TreeNode(schema.Key, 1, 1, tableNodes.ToArray()));
-            }
-            TreeNode mainNode = new TreeNode("", 0, 0, shemaNodes.ToArray());
-            mainNode.Expand();
-            treeViewSchemas.Nodes.Add(mainNode);
+                TreeNode mainNode = new TreeNode("", 0, 0, shemaNodes.ToArray());
+                mainNode.Expand();
+                treeViewSchemas.Nodes.Add(mainNode);
 
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
         }
 
         private void backgroundWorkerSchemaInfo_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -524,7 +571,7 @@ namespace AthenaEditor
             FormatSchemaInfo();
             backgroundWorkerBar.CancelAsync();
             toolStripProgressBar.Value = 0;
-            EnableButtons(true);
+            EnableButtons(true);            
         }
         private void treeViewSchemas_AfterSelect(object sender, TreeViewEventArgs e)
         {
@@ -658,6 +705,70 @@ namespace AthenaEditor
 
                 fs.Close();
             }
+        }
+
+        private void buttonReloadConnections_Click(object sender, EventArgs e)
+        {
+            LoadSchemaInfo(false);            
+        }
+
+        private void buttonCancelQuery_Click(object sender, EventArgs e)
+        {
+            StopQuery();
+        }
+
+        private void buttonExecuteSelected_Click(object sender, EventArgs e)
+        {
+            Config config = new Config("sampledb", "s3://test-with-athena/my-bucket/", 1000,
+                    "AKIAICOANOWN5KXOXOUA", "kOJJ3/qHXb7UI9C8DYHVDsZLXfheNYhd7bMJ110F",
+                    "US_EAST_2", false);
+            config.queries.Add("show databases");
+            config.useQueryId = false;
+
+            String json = JsonConvert.SerializeObject(config);
+
+            using (var socket = new TcpClient("127.0.0.1", 8081))
+            {
+                var headerContent = new StringBuilder();
+                headerContent.AppendLine("POST /athena-api/execute-stream HTTP/1.0");
+                headerContent.AppendLine("Accept: */*");
+                headerContent.AppendLine("Host: " + 8081);
+                headerContent.AppendLine("Content-Type: application/json");
+                headerContent.AppendLine("Content-Length: " + json.Length);
+                headerContent.AppendLine("Connection: keep-alive");
+                headerContent.AppendLine();
+
+                var header = Encoding.UTF8.GetBytes(headerContent.ToString());
+                var body = Encoding.UTF8.GetBytes(json);
+
+                using (var stream = socket.GetStream())
+                {
+                    stream.Write(header, 0, header.Length);
+                    stream.Write(body, 0, body.Length);
+
+                    stream.Flush();
+
+                    // Process the response.
+                    StreamReader rdr = new StreamReader(stream);
+
+                    while (!rdr.EndOfStream)
+                    {
+                        Console.WriteLine(rdr.ReadLine());
+                    }
+                }
+            }
+            
+        }
+
+        private void backgroundWorkerStop_DoWork(object sender, DoWorkEventArgs e)
+        {
+            String query = (String)e.Argument;
+            GetStopQuery(query);
+        }
+
+        private void backgroundWorkerStop_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            EnableButtons(true);
         }
     }
 }

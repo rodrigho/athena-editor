@@ -19,8 +19,10 @@ namespace AthenaEditor.entities
         public bool useQueryId { get; set; }
         public String queryExecutionId { get; set; }
 
+        public bool useEc2InstanceCredentials { get; set; }
+
         public Config(String athenaDatabase, String athenaOutputBucket, int timeSleep,
-                                  String accessKeyId, String secretKey, String region)
+                                  String accessKeyId, String secretKey, String region, bool useEc2InstanceCredentials)
         {
             this.athenaDatabase = athenaDatabase;
             this.athenaOutputBucket = athenaOutputBucket;
@@ -29,6 +31,7 @@ namespace AthenaEditor.entities
             this.secretKey = secretKey;
             this.region = region;
             this.queries = new List<String>();
+            this.useEc2InstanceCredentials = useEc2InstanceCredentials;
         }
 
     }
